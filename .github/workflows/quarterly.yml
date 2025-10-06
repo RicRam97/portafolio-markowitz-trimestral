@@ -1,4 +1,4 @@
-	name: Quarterly Report
+name: Quarterly Report
 
 on:
   schedule:
