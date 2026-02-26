@@ -3,6 +3,12 @@ import pandas as pd
 import numpy as np
 import yfinance as yf
 
+import time
+from traceback import format_exc
+
+import time
+from traceback import format_exc
+
 from config import log, BATCH_SIZE, COVERAGE_THRESHOLD, OUTLIER_SIGMA
 
 
@@ -30,6 +36,7 @@ def descargar_lotes(
         )
         if df.empty:
             log.warning("Lote %d devolvió vacío. Intentando procesar tickers individualmente...", idx)
+            time.sleep(1)
             for single_ticker in g:
                 try:
                     single_df = yf.download(
@@ -51,8 +58,9 @@ def descargar_lotes(
                     fallidos.append(single_ticker)
             continue
         frames.append(df)
+        time.sleep(2)  # Pausa entre lotes exitosos
     if not frames:
-        log.error("Todos los lotes fallaron — no hay datos")
+        log.error("Todos los lotes fallaron — no hay datos. Posible bloqueo de IP por Yahoo Finance.")
         return pd.DataFrame(), tickers
     raw = pd.concat(frames, axis=1).sort_index()
     log.info(
