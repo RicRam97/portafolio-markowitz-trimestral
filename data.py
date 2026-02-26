@@ -29,8 +29,26 @@ def descargar_lotes(
             group_by="ticker",
         )
         if df.empty:
-            log.warning("Lote %d vacío — tickers marcados como fallidos", idx)
-            fallidos.extend(g)
+            log.warning("Lote %d devolvió vacío. Intentando procesar tickers individualmente...", idx)
+            for single_ticker in g:
+                try:
+                    single_df = yf.download(
+                        single_ticker,
+                        start=start,
+                        end=end,
+                        interval=interval,
+                        auto_adjust=True,
+                        progress=False,
+                    )
+                    if single_df.empty:
+                        fallidos.append(single_ticker)
+                    else:
+                        # Para mantener el formato de MultiIndex (ticker, field) que genera el group_by="ticker"
+                        single_df.columns = pd.MultiIndex.from_product([[single_ticker], single_df.columns])
+                        frames.append(single_df)
+                except Exception as e:
+                    log.error("Fallo descargando %s: %s", single_ticker, e)
+                    fallidos.append(single_ticker)
             continue
         frames.append(df)
     if not frames:
