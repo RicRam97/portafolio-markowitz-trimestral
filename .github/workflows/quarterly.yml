@@ -26,11 +26,16 @@ jobs:
         id: run_pipeline
         run: |
           python - << 'PY'
-          from main import pipeline_trimestral
-          p = pipeline_trimestral()
-          print("REPORT_PATH::" + p)
-          with open("report_path.txt","w") as f:
-              f.write(p)
+          from pipeline import pipeline_trimestral
+          import sys
+          try:
+              p = pipeline_trimestral()
+              print("REPORT_PATH::" + p)
+              with open("report_path.txt","w") as f:
+                  f.write(p)
+          except Exception as e:
+              print(f"Error {e}")
+              sys.exit(1)
           PY
 
       - name: Read report path
@@ -42,11 +47,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add reports/*.html || true
+          git add reports/ || true
           git commit -m "Quarterly report $(date -u +'%Y-%m-%d')" || true
           git push
 
       - name: Send report via Gmail
+        if: success()
         env:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
@@ -67,4 +73,20 @@ jobs:
           subject = f"Reporte Trimestral de Portafolio {y}-Q{q}"
           to = os.environ.get("GMAIL_TO")
           send_gmail(subject, html, to, attachment_path=report_path)
+          PY
+
+      - name: Alert on Failure
+        if: failure()
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
+          GMAIL_TO:   ${{ secrets.GMAIL_TO }}
+        run: |
+          python - << 'PY'
+          import os
+          from send_mail_gmail import send_gmail
+          subject = "💥 FALLÓ el Pipeline de Portafolio"
+          html = "<p>El pipeline trimestral ha fallado en GitHub Actions. Revisa los logs por favor.</p>"
+          to = os.environ.get("GMAIL_TO")
+          send_gmail(subject, html, to)
           PY

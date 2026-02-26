@@ -1,5 +1,8 @@
-yfinance
+yfinance==0.2.36
 pandas
 numpy
 scikit-learn
 matplotlib
+scipy
+PyYAML==6.0.1
+pytest==8.0.0
