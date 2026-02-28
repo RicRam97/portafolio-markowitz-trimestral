@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Markowitz Portfolio Analyzer</title>
+  <!-- Google Fonts: Modern Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- HTML2PDF via CDN for client-side PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <!-- App Container -->
+  <div class="app-container">
+
+    <!-- SIDEBAR: Config panel -->
+    <aside class="sidebar glass-panel">
+      <div class="sidebar-header">
+        <h2>Portfolio Optimizer</h2>
+        <p>Markowitz Mean-Variance</p>
+      </div>
+
+      <div class="config-section">
+        <label for="budget">Investment Budget (USD)</label>
+        <div class="input-group">
+          <span class="currency-symbol">$</span>
+          <input type="number" id="budget" value="10000" min="100" step="100" />
+        </div>
+      </div>
+
+      <div class="config-section">
+        <div class="tickers-header">
+          <label>Universe (Tickers)</label>
+          <span id="ticker-count" class="badge">0 selected</span>
+        </div>
+
+        <div class="add-ticker-group">
+          <input type="text" id="new-ticker" placeholder="e.g. NVDA, AAPL" />
+          <button id="btn-add-ticker" class="btn btn-secondary">+</button>
+        </div>
+
+        <div class="bulk-actions" style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button id="btn-select-all" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem; padding: 6px;">Select
+            All</button>
+          <button id="btn-clear-all" class="btn btn-secondary" style="flex: 1; font-size: 0.8rem; padding: 6px;">Clear
+            All</button>
+        </div>
+
+        <!-- Dynamic Ticker List Container -->
+        <div class="ticker-list-container" id="ticker-list">
+          <!-- Checkboxes will be injected here via JS -->
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button id="btn-optimize" class="btn btn-primary glow-effect">
+          <span id="btn-optimize-text">Optimize Portfolio</span>
+          <div class="spinner hidden" id="loading-spinner"></div>
+        </button>
+
+        <button id="btn-export-pdf" class="btn btn-primary btn-outline" title="Export Dashboard to PDF">
+          <svg style="width:16px;height:16px" viewBox="0 0 24 24">
+            <path fill="currentColor"
+              d="M19,12V7H15V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V12H19M19,19H5V5H13V9H17V19M12,17L15.5,13.5H13V10H11V13.5H8.5L12,17Z" />
+          </svg>
+          Export PDF
+        </button>
+      </div>
+
+      <div id="error-message" class="error-toast hidden"></div>
+    </aside>
+
+    <!-- MAIN AREA: Dashboard & Results -->
+    <main class="main-content" id="printable-dashboard">
+      <!-- Section 1: Top Metrics -->
+      <section class="metrics-grid">
+        <div class="metric-card glass-panel">
+          <h3>Expected Return <span class="badge">Annual</span></h3>
+          <div class="metric-value positive" id="metric-return">-%</div>
+        </div>
+        <div class="metric-card glass-panel">
+          <h3>Volatility (Risk)</h3>
+          <div class="metric-value neutral" id="metric-volatility">-%</div>
+        </div>
+        <div class="metric-card glass-panel">
+          <h3>Sharpe Ratio</h3>
+          <div class="metric-value highlight" id="metric-sharpe">-</div>
+        </div>
+        <div class="metric-card glass-panel">
+          <h3>Cash Remaining</h3>
+          <div class="metric-value highlight" id="metric-rem-cash">$-</div>
+        </div>
+      </section>
+
+      <!-- Section 2: Charts (History & Doughnut) -->
+      <section class="charts-grid-top">
+        <!-- Historical Tracking Chart -->
+        <div class="chart-card glass-panel history-section">
+          <div class="section-header">
+            <h3>Historical Backtest vs S&P 500</h3>
+            <p class="subtitle">Simulated past 3-year performance (Base 100)</p>
+          </div>
+          <div class="canvas-wrapper line-wrapper">
+            <canvas id="history-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Allocation Doughnut Graph -->
+        <div class="chart-card glass-panel split-chart-card">
+          <h3>Weight Distribution</h3>
+          <div class="canvas-wrapper doughnut-wrapper">
+            <canvas id="allocation-chart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Allocation Table -->
+      <section class="table-section glass-panel">
+        <h3>Allocation & Shares to Buy</h3>
+        <div class="table-container">
+          <table id="allocation-table">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Weight</th>
+                <th>Price</th>
+                <th>Shares</th>
+                <th>Total ($)</th>
+              </tr>
+            </thead>
+            <tbody id="allocation-body">
+              <!-- Rows injected via JS -->
+              <tr>
+                <td colspan="5" class="empty-state">Run optimization to see allocations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>
