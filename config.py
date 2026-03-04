@@ -23,7 +23,7 @@ SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 CRON_SECRET = os.getenv("CRON_SECRET", "dev_cron_secret_123")
 
 # ── CORS ─────────────────────────────────────────────────────
-_cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://127.0.0.1:5173")
+_cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,https://kaudal.com.mx,https://www.kaudal.com.mx")
 CORS_ORIGINS: list[str] = [o.strip() for o in _cors_raw.split(",") if o.strip()]
 
 # ── Rate Limiting ────────────────────────────────────────────

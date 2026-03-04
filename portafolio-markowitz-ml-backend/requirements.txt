@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+supabase
+pandas
+numpy
+scipy
+cvxpy
+scikit-learn
+yfinance
+xgboost
