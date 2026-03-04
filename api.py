@@ -22,7 +22,7 @@ from data import (
     calcular_perfil_por_meta, calcular_impacto_volatilidad, simular_crisis,
     comparar_instrumentos, obtener_dividend_yields_batch,
 )
-from optimizer import optimize_markowitz_lw, optimize_hrp, simulate_monte_carlo, smart_beta_filter
+from optimizer import optimize_markowitz, optimize_hrp, run_monte_carlo, smart_beta_filter
 from config import log, CORS_ORIGINS, ENVIRONMENT, RATE_LIMIT_AUTH, RATE_LIMIT_ANON, CRON_SECRET
 from auth import get_current_user, get_optional_user
 from data_fetcher import get_historical_prices, get_benchmarks, DataFetchError
