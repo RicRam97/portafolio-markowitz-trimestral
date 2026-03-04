@@ -1,6 +1,6 @@
 // API Configuration (Dynamic for Production vs Localhost via Vite)
 const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-const PROD_API_BASE = import.meta.env.VITE_API_BASE || "https://portafolio-markowitz-api.onrender.com/api";
+const PROD_API_BASE = import.meta.env.VITE_API_BASE || "https://portafolio-api-production.up.railway.app/api";
 const API_BASE = isLocalhost ? "http://localhost:8000/api" : PROD_API_BASE;
 
 // --- Auth / Session Manager ---
