@@ -1,0 +1,222 @@
+{
+    "source": "Wikipedia BMV List",
+    "count": 36,
+    "tickers": [
+        {
+            "symbol": "AC.MX",
+            "name": "Arca Continental",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "ALFAA.MX",
+            "name": "Grupo Alfa",
+            "sector": "Industrial",
+            "market": "MX"
+        },
+        {
+            "symbol": "ALPEKA.MX",
+            "name": "Alpek",
+            "sector": "Materiales",
+            "market": "MX"
+        },
+        {
+            "symbol": "ALSEA.MX",
+            "name": "Controladora Alsea",
+            "sector": "Servicios y bienes de consumo no b\u00e1sico",
+            "market": "MX"
+        },
+        {
+            "symbol": "AMXL.MX",
+            "name": "Am\u00e9rica M\u00f3vil",
+            "sector": "Servicio de Telecomunicaciones",
+            "market": "MX"
+        },
+        {
+            "symbol": "ASURB.MX",
+            "name": "Grupo Aeroportuario del Sureste",
+            "sector": "Industrial",
+            "market": "MX"
+        },
+        {
+            "symbol": "AZTECACPO.MX",
+            "name": "TV Azteca",
+            "sector": "Servicio de Telecomunicaciones",
+            "market": "MX"
+        },
+        {
+            "symbol": "BIMBOA.MX",
+            "name": "Grupo Bimbo",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "BOLSAA.MX",
+            "name": "Bolsa Mexicana de Valores",
+            "sector": "Servicios financieros",
+            "market": "MX"
+        },
+        {
+            "symbol": "CEMEXCPO.MX",
+            "name": "Cemex",
+            "sector": "Materiales",
+            "market": "MX"
+        },
+        {
+            "symbol": "COMERCI.MX",
+            "name": "Controladora Comercial Mexicana",
+            "sector": "Servicio y Bienes de Consumo No B\u00e1sico",
+            "market": "MX"
+        },
+        {
+            "symbol": "COMPARC.MX",
+            "name": "Banco Compartamos",
+            "sector": "Servicios financieros",
+            "market": "MX"
+        },
+        {
+            "symbol": "ELEKTRA.MX",
+            "name": "Grupo Elektra",
+            "sector": "Servicios y bienes de consumo no b\u00e1sico",
+            "market": "MX"
+        },
+        {
+            "symbol": "FEMSAUBD.MX",
+            "name": "Fomento Econ\u00f3mico Mexicano",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "GAPB.MX",
+            "name": "Grupo Aeroportuario del Pac\u00edfico",
+            "sector": "Industrial",
+            "market": "MX"
+        },
+        {
+            "symbol": "GCARSOA1.MX",
+            "name": "Grupo Carso",
+            "sector": "Industrial",
+            "market": "MX"
+        },
+        {
+            "symbol": "GFINBURO.MX",
+            "name": "Grupo Financiero Inbursa",
+            "sector": "Servicios financieros",
+            "market": "MX"
+        },
+        {
+            "symbol": "GFNORTEO.MX",
+            "name": "Grupo Financiero Banorte",
+            "sector": "Servicios financieros",
+            "market": "MX"
+        },
+        {
+            "symbol": "GFREGIOO.MX",
+            "name": "Grupo Financiero BanRegio",
+            "sector": "Servicios financieros",
+            "market": "MX"
+        },
+        {
+            "symbol": "GMEXICOB.MX",
+            "name": "Grupo M\u00e9xico",
+            "sector": "Materiales",
+            "market": "MX"
+        },
+        {
+            "symbol": "GRUMAB.MX",
+            "name": "Grupo Maseca",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "ICA.MX",
+            "name": "Empresas ICA",
+            "sector": "Industrial",
+            "market": "MX"
+        },
+        {
+            "symbol": "ICHB.MX",
+            "name": "Industrias Ch",
+            "sector": "Materiales",
+            "market": "MX"
+        },
+        {
+            "symbol": "IENOVA.MX",
+            "name": "IEnova",
+            "sector": "nan",
+            "market": "MX"
+        },
+        {
+            "symbol": "KIMBER.MX",
+            "name": "Kimberly-Clark",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "KOFL.MX",
+            "name": "Coca-Cola FEMSA",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "LABB.MX",
+            "name": "Genomma Lab Internacional",
+            "sector": "Salud",
+            "market": "MX"
+        },
+        {
+            "symbol": "LALAB.MX",
+            "name": "Grupo Lala",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        },
+        {
+            "symbol": "LIVEPOLC1.MX",
+            "name": "El Puerto de Liverpool",
+            "sector": "Servicio y Bienes de Consumo No B\u00e1sico",
+            "market": "MX"
+        },
+        {
+            "symbol": "MEXCHEM.MX",
+            "name": "Mexichem",
+            "sector": "Materiales",
+            "market": "MX"
+        },
+        {
+            "symbol": "OHLMEX.MX",
+            "name": "OHL M\u00e9xico",
+            "sector": "Industrial",
+            "market": "MX"
+        },
+        {
+            "symbol": "PEOLES.MX",
+            "name": "Industrias Pe\u00f1oles",
+            "sector": "Materiales",
+            "market": "MX"
+        },
+        {
+            "symbol": "PINFRA.MX",
+            "name": "Pinfra",
+            "sector": "nan",
+            "market": "MX"
+        },
+        {
+            "symbol": "SANMEX.MX",
+            "name": "Santander M\u00e9xico",
+            "sector": "Servicios financieros",
+            "market": "MX"
+        },
+        {
+            "symbol": "TLEVISACPO.MX",
+            "name": "Grupo Televisa",
+            "sector": "Servicio de Telecomunicaciones",
+            "market": "MX"
+        },
+        {
+            "symbol": "WALMEXV.MX",
+            "name": "Walmex",
+            "sector": "Productos de Consumo Frecuente",
+            "market": "MX"
+        }
+    ]
+}

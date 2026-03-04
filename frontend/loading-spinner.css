@@ -1,0 +1,183 @@
+/* loading-spinner.css */
+
+.kq-spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(15, 23, 42, 0.85);
+    /* Dark slate with opacity */
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    /* Do NOT block scroll natively via body if we just want an overlay,
+       but usually we want to prevent interaction beneath */
+}
+
+.kq-spinner-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.kq-spinner-container {
+    background-color: #1e293b;
+    /* slate-800 */
+    border: 1px solid #334155;
+    /* slate-700 */
+    border-radius: 16px;
+    padding: 32px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* 1. Spinner Ring Animation */
+.kq-spinner-ring {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    /* Gradient border using conic-gradient and mask */
+    background: conic-gradient(from 0deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+    padding: 4px;
+    /* border thickness */
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    /* Rotation */
+    animation: kq-spin 1.2s linear infinite;
+    margin-bottom: 24px;
+}
+
+@keyframes kq-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* 2. Text and Messages */
+.kq-spinner-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #f8fafc;
+    /* slate-50 */
+    margin-bottom: 8px;
+    margin-top: 0;
+}
+
+.kq-spinner-message {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    /* slate-400 */
+    min-height: 48px;
+    /* reserve space for 2 lines */
+    line-height: 1.4;
+    transition: opacity 0.3s ease;
+}
+
+.kq-spinner-message.fade-out {
+    opacity: 0;
+}
+
+/* 3. Progress Bar */
+.kq-progress-wrapper {
+    width: 100%;
+    height: 6px;
+    background-color: #334155;
+    border-radius: 9999px;
+    margin-top: 24px;
+    overflow: hidden;
+    position: relative;
+}
+
+.kq-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    width: 0%;
+    border-radius: 9999px;
+    transition: width 0.4s ease-out;
+}
+
+.kq-progress-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 8px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* 4. Error State (Sad Icon & Button) */
+.kq-error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: none;
+}
+
+.kq-error-text {
+    color: #ef4444;
+    /* red-500 */
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+    display: none;
+    word-break: break-word;
+}
+
+.kq-retry-btn {
+    display: none;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.kq-retry-btn:hover {
+    background-color: #2563eb;
+}
+
+.kq-cancel-btn {
+    display: none;
+    background-color: transparent;
+    color: #94a3b8;
+    border: 1px solid #64748b;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+}
+
+.kq-cancel-btn:hover {
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+/* State Classes */
+.kq-spinner-container.is-error .kq-spinner-ring,
+.kq-spinner-container.is-error .kq-progress-wrapper,
+.kq-spinner-container.is-error .kq-progress-text,
+.kq-spinner-container.is-error .kq-spinner-message {
+    display: none;
+}
+
+.kq-spinner-container.is-error .kq-error-icon,
+.kq-spinner-container.is-error .kq-error-text,
+.kq-spinner-container.is-error .kq-retry-btn {
+    display: block;
+}
+
+.kq-spinner-container.is-timeout .kq-cancel-btn {
+    display: block;
+}

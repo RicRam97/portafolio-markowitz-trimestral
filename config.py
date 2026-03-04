@@ -1,11 +1,34 @@
-# config.py — Configuración central y logging
+# config.py — Configuración central, logging y variables de entorno
+import os
 import logging
 import yaml
 from pathlib import Path
+from dotenv import load_dotenv
+
+# ── Cargar .env (solo afecta desarrollo local; Railway inyecta vars directo) ──
+load_dotenv()
 
 # ── Directorios ──────────────────────────────────────────────
 PROJECT_ROOT = Path(__file__).resolve().parent
 REPORTS_DIR = PROJECT_ROOT / "reports"
+
+# ── Entorno ──────────────────────────────────────────────────
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# ── Supabase ─────────────────────────────────────────────────
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+CRON_SECRET = os.getenv("CRON_SECRET", "dev_cron_secret_123")
+
+# ── CORS ─────────────────────────────────────────────────────
+_cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://127.0.0.1:5173")
+CORS_ORIGINS: list[str] = [o.strip() for o in _cors_raw.split(",") if o.strip()]
+
+# ── Rate Limiting ────────────────────────────────────────────
+RATE_LIMIT_AUTH = os.getenv("RATE_LIMIT_AUTH", "10/minute")
+RATE_LIMIT_ANON = os.getenv("RATE_LIMIT_ANON", "3/minute")
 
 # ── Parámetros del pipeline ──────────────────────────────────
 LOOKBACK_YEARS = 3

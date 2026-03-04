@@ -1,55 +1,59 @@
+import pytest
 import pandas as pd
 import numpy as np
-from optimizer import estimar_parametros, optimizar_sharpe, frontera_eficiente, pesos_risk_parity
+from optimizer import sanity_filters, optimize_markowitz, optimize_hrp, run_monte_carlo, calculate_positions, OptimizerError
 
-def create_synthetic_ret_panel():
-    # 5 assets, 100 days
+def test_sanity_filters():
     np.random.seed(42)
-    assets = ["A", "B", "C", "D", "E"]
-    rets = np.random.normal(0.0005, 0.01, (100, 5))
-    return pd.DataFrame(rets, columns=assets)
+    dates = pd.date_range("2020-01-01", periods=260)
+    rets = pd.DataFrame({
+        "A": np.random.normal(0.0001, 0.01, 260),
+        "B": np.random.normal(0.0002, 0.015, 260)
+    }, index=dates)
+    
+    res = sanity_filters(rets)
+    assert res["valid"] is True
+    assert not res["outlier_warning"]
+    assert len(res["excluded_tickers"]) == 0
+    assert "A" in res["filtered_returns"]
+    assert "B" in res["filtered_returns"]
 
-def test_estimar_parametros():
-    df = create_synthetic_ret_panel()
-    mu, cov = estimar_parametros(df, shrinkage_alpha=0.25)
-    
-    assert list(mu.index) == ["A", "B", "C", "D", "E"]
-    assert cov.shape == (5, 5)
-    # Check that covariance is symmetric
-    assert np.allclose(cov.values, cov.values.T)
+def test_sanity_filters_insufficient_assets():
+    dates = pd.date_range("2020-01-01", periods=260)
+    rets = pd.DataFrame({"A": np.random.normal(0, 0.01, 260)}, index=dates)
+    with pytest.raises(OptimizerError, match="Mínimo 2 activos requeridos"):
+        sanity_filters(rets)
 
-def test_optimizar_sharpe():
-    df = create_synthetic_ret_panel()
-    mu, cov = estimar_parametros(df, shrinkage_alpha=0.25)
+def test_optimize_markowitz():
+    np.random.seed(42)
+    dates = pd.date_range("2020-01-01", periods=260)
+    rets = pd.DataFrame({
+        "A": np.random.normal(0.0001, 0.01, 260),
+        "B": np.random.normal(0.0002, 0.015, 260)
+    }, index=dates)
     
-    # Run optimizer with max weight of 0.4
-    w = optimizar_sharpe(mu, cov, max_weight=0.4)
+    constraints = {"max_weight": 0.6, "broker_commission": 0.0}
+    res = optimize_markowitz(rets, constraints)
     
-    # Assert weight sum to 1
-    assert np.isclose(w.sum(), 1.0)
-    # Assert bounds respected
-    assert (w <= 0.4001).all()
-    assert (w >= -0.0001).all()
-    # Check length
-    assert len(w) == 5
+    assert "weights" in res
+    assert "expected_return_net" in res
+    assert "expected_volatility" in res
+    assert "sharpe_ratio" in res
 
-def test_frontera_eficiente():
-    df = create_synthetic_ret_panel()
-    mu, cov = estimar_parametros(df, shrinkage_alpha=0.25)
+def test_calculate_positions():
+    weights = {"A": 0.6, "B": 0.4}
+    prices = pd.Series({"A": 100.0, "B": 50.0})
+    budget = 1000.0
     
-    # max_weight must be large enough to allow 5 assets to sum to 1.
-    ef = frontera_eficiente(mu, cov, n_points=5, max_weight=1.0)
-    assert not ef.empty
-    assert list(ef.columns) == ["target", "ret", "vol", "sharpe"]
-    # Usually vol increases as we demand higher returns
-    if len(ef) >= 2:
-        assert ef.iloc[-1]["ret"] > ef.iloc[0]["ret"]
-
-def test_risk_parity():
-    df = create_synthetic_ret_panel()
-    _, cov = estimar_parametros(df)
+    res = calculate_positions(weights, budget, prices)
     
-    w_rp = pesos_risk_parity(cov)
-    # Check weight sum to 1
-    assert np.isclose(w_rp.sum(), 1.0)
-    assert (w_rp >= -0.0001).all()
+    assert "positions" in res
+    assert res["invested_cash"] <= budget
+    
+    pos_A = next(p for p in res["positions"] if p["ticker"] == "A")
+    pos_B = next(p for p in res["positions"] if p["ticker"] == "B")
+    
+    assert pos_A["shares"] == 6
+    assert pos_B["shares"] == 8
+    
+    assert res["invested_cash"] == 6*100 + 8*50 # 1000.0

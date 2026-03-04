@@ -8,7 +8,8 @@ import pandas as pd
 
 from config import log, cargar_tickers, REPORTS_DIR, LOOKBACK_YEARS
 from data import descargar_lotes, extraer_panel, limpiar_retornos, reporte_calidad
-from optimizer import estimar_parametros, optimizar_sharpe, frontera_eficiente, pesos_risk_parity
+from optimizer import optimize_markowitz_lw, optimize_hrp, simulate_monte_carlo, smart_beta_filter
+from pypfopt import expected_returns, risk_models
 from report import generar_reporte_html
 
 
@@ -51,19 +52,24 @@ def pipeline_trimestral() -> str:
         prices = prices.reindex(idx_master).ffill(limit=3)
 
         # ── Limpieza ─────────────────────────────────────────
+        # ── Limpieza y Filtrado ──────────────────────────────
         rets_clean = limpiar_retornos(prices)
         if rets_clean.shape[1] < 2:
             raise RuntimeError(
                 f"Muy pocos tickers tras limpieza: {rets_clean.shape[1]}"
             )
+            
+        rets_clean = smart_beta_filter(rets_clean, strategy="momentum", top_n=20)
 
         # ── Estimación ───────────────────────────────────────
-        mu_shrunk, cov_annual = estimar_parametros(rets_clean)
+        mu_shrunk = expected_returns.mean_historical_return(rets_clean, returns_data=True, frequency=252)
+        cov_annual = risk_models.CovarianceShrinkage(rets_clean, returns_data=True).ledoit_wolf()
+        cov_annual = pd.DataFrame(cov_annual, index=rets_clean.columns, columns=rets_clean.columns)
 
         # ── Optimización ─────────────────────────────────────
-        w_best = optimizar_sharpe(mu_shrunk, cov_annual)
-        ef = frontera_eficiente(mu_shrunk, cov_annual)
-        w_rp = pesos_risk_parity(cov_annual)
+        w_best, _, _, _ = optimize_markowitz_lw(rets_clean)
+        w_rp, _, _, _ = optimize_hrp(rets_clean)
+        ef = simulate_monte_carlo(rets_clean, num_portfolios=5000)
 
         # ── Calidad ──────────────────────────────────────────
         quality = reporte_calidad(prices, rets_clean)

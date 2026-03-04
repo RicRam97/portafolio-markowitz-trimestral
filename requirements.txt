@@ -1,9 +1,18 @@
 yfinance>=0.2.54
 pandas
 numpy
+numpy_financial
 scikit-learn
 matplotlib
 scipy
 PyYAML==6.0.1
 pytest==8.0.0
 curl_cffi
+fastapi
+uvicorn
+supabase
+
+# ── Production dependencies ──
+python-dotenv>=1.0.0
+slowapi>=0.1.9
+python-jose[cryptography]>=3.3.0

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./kaudal-logo2.png" />
+    <title>Iniciar sesión — Kaudal</title>
+    <meta name="description"
+        content="Inicia sesión o crea tu cuenta en Kaudal para guardar tus portafolios y explorar herramientas educativas de inversión." />
+    <!-- Google Fonts: Outfit (display), Inter (body), JetBrains Mono (metrics) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body class="auth-body">
+
+    <!-- Background orbs (matching landing page aesthetic) -->
+    <div class="auth-bg-orbs">
+        <div class="hero-orb hero-orb--blue"></div>
+        <div class="hero-orb hero-orb--green"></div>
+        <div class="hero-orb hero-orb--purple"></div>
+    </div>
+
+    <!-- ===== AUTH CARD ===== -->
+    <main class="auth-page">
+        <div class="auth-card glass-panel">
+
+            <!-- Logo -->
+            <a href="./index.html" class="auth-logo-link">
+                <img src="./kaudal-logo2.png" alt="Kaudal" class="auth-logo" />
+            </a>
+
+            <!-- ===== TABS ===== -->
+            <div class="auth-tabs" id="auth-tabs">
+                <button class="auth-tab active" data-tab="login" id="tab-login">Iniciar sesión</button>
+                <button class="auth-tab" data-tab="register" id="tab-register">Crear cuenta</button>
+            </div>
+
+            <!-- ===== GLOBAL ERROR ===== -->
+            <div class="auth-message hidden" id="auth-message"></div>
+
+            <!-- ===== LOGIN FORM ===== -->
+            <form class="auth-form" id="form-login" novalidate>
+                <div class="auth-field">
+                    <label for="login-email">Correo electrónico</label>
+                    <input type="email" id="login-email" placeholder="tu@email.com" required autocomplete="email" />
+                    <span class="auth-field-error" id="login-email-error"></span>
+                </div>
+                <div class="auth-field">
+                    <label for="login-password">Contraseña</label>
+                    <div class="auth-password-wrapper">
+                        <input type="password" id="login-password" placeholder="Tu contraseña" required minlength="8"
+                            autocomplete="current-password" />
+                        <button type="button" class="auth-password-toggle" id="toggle-login-pass"
+                            aria-label="Mostrar contraseña">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <span class="auth-field-error" id="login-password-error"></span>
+                </div>
+                <button type="submit" class="btn btn-cta auth-submit" id="btn-login">
+                    <span id="btn-login-text">Iniciar sesión</span>
+                    <div class="spinner hidden" id="login-spinner"></div>
+                </button>
+            </form>
+
+            <!-- ===== REGISTER FORM ===== -->
+            <form class="auth-form hidden" id="form-register" novalidate>
+                <div class="auth-field">
+                    <label for="register-email">Correo electrónico</label>
+                    <input type="email" id="register-email" placeholder="tu@email.com" required autocomplete="email" />
+                    <span class="auth-field-error" id="register-email-error"></span>
+                </div>
+                <div class="auth-field">
+                    <label for="register-password">Contraseña</label>
+                    <div class="auth-password-wrapper">
+                        <input type="password" id="register-password" placeholder="Mínimo 8 caracteres" required
+                            minlength="8" autocomplete="new-password" />
+                        <button type="button" class="auth-password-toggle" id="toggle-register-pass"
+                            aria-label="Mostrar contraseña">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="auth-password-strength" id="password-strength">
+                        <div class="strength-bar" id="strength-bar"></div>
+                    </div>
+                    <span class="auth-field-hint" id="register-password-hint">Mínimo 8 caracteres</span>
+                    <span class="auth-field-error" id="register-password-error"></span>
+                </div>
+                <button type="submit" class="btn btn-cta auth-submit" id="btn-register">
+                    <span id="btn-register-text">Crear cuenta</span>
+                    <div class="spinner hidden" id="register-spinner"></div>
+                </button>
+            </form>
+
+            <!-- ===== DIVIDER ===== -->
+            <div class="auth-divider" id="auth-divider">
+                <span>o</span>
+            </div>
+
+            <!-- ===== GOOGLE OAUTH ===== -->
+            <button class="auth-google-btn" id="btn-google">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335"
+                        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                    <path fill="#4285F4"
+                        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                    <path fill="#FBBC05"
+                        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+                    <path fill="#34A853"
+                        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                </svg>
+                <span>Continuar con Google</span>
+            </button>
+
+            <!-- ===== VERIFY EMAIL SCREEN ===== -->
+            <div class="auth-verify-screen hidden" id="verify-screen">
+                <div class="verify-icon">📬</div>
+                <h2>Revisa tu correo</h2>
+                <p>Te enviamos un enlace de verificación a:</p>
+                <p class="verify-email-display" id="verify-email-display">—</p>
+                <p class="verify-hint">Revisa tu bandeja de entrada y carpeta de spam. El enlace expira en 24 horas.</p>
+                <button class="btn btn-secondary auth-resend" id="btn-resend" disabled>
+                    <span id="btn-resend-text">Reenviar en 60s</span>
+                </button>
+                <button class="btn btn-secondary auth-back-login" id="btn-back-login">
+                    ← Volver al inicio de sesión
+                </button>
+            </div>
+
+        </div>
+
+        <!-- Footer Legal -->
+        <footer class="auth-footer">
+            <a href="./privacidad.html" target="_blank" rel="noopener">Privacidad</a>
+            <span class="auth-footer-sep">|</span>
+            <a href="./terminos.html" target="_blank" rel="noopener">Términos</a>
+            <span class="auth-footer-sep">|</span>
+            <a href="./cookies.html" target="_blank" rel="noopener">Cookies</a>
+        </footer>
+    </main>
+
+    <!-- ===== LEGAL ACCEPTANCE MODAL ===== -->
+    <div class="modal-overlay hidden" id="legal-modal">
+        <div class="modal-content glass-panel legal-modal-content">
+            <div class="legal-modal-header">
+                <h2>📋 Aceptación de Términos</h2>
+                <p>Para continuar necesitas aceptar los siguientes puntos:</p>
+            </div>
+
+            <div class="legal-checkboxes">
+                <label class="legal-checkbox-item">
+                    <input type="checkbox" class="legal-cb" id="cb-terms" />
+                    <span class="legal-cb-custom"></span>
+                    <span class="legal-cb-text">
+                        He leído y acepto los
+                        <a href="./terminos.html" target="_blank" rel="noopener">Términos y Condiciones ↗</a>
+                    </span>
+                </label>
+
+                <label class="legal-checkbox-item">
+                    <input type="checkbox" class="legal-cb" id="cb-privacy" />
+                    <span class="legal-cb-custom"></span>
+                    <span class="legal-cb-text">
+                        He leído y acepto el
+                        <a href="./privacidad.html" target="_blank" rel="noopener">Aviso de Privacidad ↗</a>
+                    </span>
+                </label>
+
+                <label class="legal-checkbox-item">
+                    <input type="checkbox" class="legal-cb" id="cb-educational" />
+                    <span class="legal-cb-custom"></span>
+                    <span class="legal-cb-text">
+                        Entiendo que esta herramienta es educativa y <strong>NO</strong> constituye asesoría financiera
+                        profesional
+                    </span>
+                </label>
+
+                <label class="legal-checkbox-item">
+                    <input type="checkbox" class="legal-cb" id="cb-risk" />
+                    <span class="legal-cb-custom"></span>
+                    <span class="legal-cb-text">
+                        Reconozco que toda inversión conlleva riesgos inherentes y que el rendimiento pasado <strong>no
+                            garantiza</strong> resultados futuros
+                    </span>
+                </label>
+            </div>
+
+            <button class="btn btn-cta auth-submit legal-continue-btn" id="btn-legal-continue" disabled>
+                <span id="btn-legal-text">Continuar</span>
+                <div class="spinner hidden" id="legal-spinner"></div>
+            </button>
+        </div>
+    </div>
+
+    <script type="module" src="./auth.js"></script>
+</body>
+
+</html>

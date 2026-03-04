@@ -1,0 +1,120 @@
+<!--
+  BANNER DE COOKIES — Kaudal
+  Pega este bloque justo antes de </body> en tu index.html
+  o cárgalo como componente.
+-->
+
+<!-- CSS del banner -->
+<style>
+    .cookie-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #1a1a2e;
+        color: #e0e0e0;
+        padding: 1rem 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: .75rem;
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        font-size: .9rem;
+        z-index: 10000;
+        box-shadow: 0 -2px 12px rgba(0, 0, 0, .3);
+        transition: transform .3s ease;
+    }
+
+    .cookie-banner.hidden {
+        transform: translateY(100%);
+        pointer-events: none;
+    }
+
+    .cookie-banner a {
+        color: #a29bfe;
+        text-decoration: underline;
+    }
+
+    .cookie-banner button {
+        border: none;
+        padding: .5rem 1.2rem;
+        border-radius: 6px;
+        font-size: .9rem;
+        cursor: pointer;
+        font-weight: 600;
+        transition: opacity .2s;
+    }
+
+    .cookie-banner button:hover {
+        opacity: .85;
+    }
+
+    .cookie-btn-accept {
+        background: #6c63ff;
+        color: #fff;
+    }
+
+    .cookie-btn-reject {
+        background: transparent;
+        color: #a29bfe;
+        border: 1px solid #a29bfe !important;
+    }
+</style>
+
+<!-- HTML del banner -->
+<div id="cookieBanner" class="cookie-banner hidden">
+    <span>
+        🍪 Usamos cookies esenciales para que tu sesión funcione y cookies analíticas para mejorar Kaudal.
+        <a href="/cookies">Más información</a>.
+    </span>
+    <button class="cookie-btn-accept" id="cookieAccept">Aceptar todas</button>
+    <button class="cookie-btn-reject" id="cookieReject">Solo esenciales</button>
+</div>
+
+<!-- JS del banner -->
+<script>
+    (function () {
+        const COOKIE_KEY = 'kaudal_cookie_consent';
+        const banner = document.getElementById('cookieBanner');
+        const btnAccept = document.getElementById('cookieAccept');
+        const btnReject = document.getElementById('cookieReject');
+
+        // Si no hay decisión guardada, mostrar el banner
+        if (!localStorage.getItem(COOKIE_KEY)) {
+            banner.classList.remove('hidden');
+        }
+
+        btnAccept.addEventListener('click', function () {
+            localStorage.setItem(COOKIE_KEY, 'all');
+            banner.classList.add('hidden');
+            loadAnalytics(); // Cargar GA solo si acepta
+        });
+
+        btnReject.addEventListener('click', function () {
+            localStorage.setItem(COOKIE_KEY, 'essential');
+            banner.classList.add('hidden');
+            // No cargar analytics
+        });
+
+        // Si ya aceptó previamente, cargar analytics al inicio
+        if (localStorage.getItem(COOKIE_KEY) === 'all') {
+            loadAnalytics();
+        }
+
+        function loadAnalytics() {
+            // Descomenta y agrega tu ID de Google Analytics cuando lo implementes:
+            /*
+            var script = document.createElement('script');
+            script.src = 'https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX';
+            script.async = true;
+            document.head.appendChild(script);
+        
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){ dataLayer.push(arguments); }
+            gtag('js', new Date());
+            gtag('config', 'G-XXXXXXXXXX');
+            */
+        }
+    })();
+</script>

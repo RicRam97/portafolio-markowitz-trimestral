@@ -1,4 +1,30 @@
+# Python
 __pycache__/
 .pytest_cache/
-reports/
 *.pyc
+*.pyo
+*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Caches
+.cache_yf/
+yfinance_cache.sqlite
+
+# Reports (generated)
+reports/
+
+# Frontend build
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

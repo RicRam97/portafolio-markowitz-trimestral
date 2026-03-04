@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/png" href="./kaudal-logo2.png" />
+    <title>Kaudal — Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@500&display=swap"
+        rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Global Styles -->
+    <link rel="stylesheet" href="./style.css" />
+    <!-- Dashboard Specific Styles -->
+    <link rel="stylesheet" href="./dashboard.css" />
+</head>
+
+<body class="dashboard-body view-app">
+
+    <!-- Desktop Sidebar / Mobile Bottom Nav -->
+    <aside class="dashboard-nav" id="sidebar-nav">
+        <div class="nav-brand-desktop">
+            <a href="./index.html">
+                <img src="./kaudal-logo2.png" alt="Kaudal" class="logo-img" />
+            </a>
+        </div>
+        <div class="nav-menu">
+            <a href="#dashboard" class="nav-item active" data-module="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="#estrategias" class="nav-item" data-module="estrategias">
+                <span class="nav-icon">🎯</span>
+                <span class="nav-label">Estrategias</span>
+            </a>
+            <a href="#perfil" class="nav-item" data-module="perfil">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Perfil</span>
+            </a>
+            <a href="#configuracion" class="nav-item" data-module="configuracion">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-label">Ajustes</span>
+            </a>
+            <a href="#aprende" class="nav-item desktop-only" data-module="aprende">
+                <span class="nav-icon">📚</span>
+                <span class="nav-label">Aprende</span>
+            </a>
+            <a href="#cuenta" class="nav-item desktop-only" data-module="cuenta">
+                <span class="nav-icon">ℹ️</span>
+                <span class="nav-label">Cuenta</span>
+            </a>
+            <!-- Mobile hamburger for extra items -->
+            <button class="nav-item mobile-more" id="btn-mobile-more">
+                <span class="nav-icon">☰</span>
+                <span class="nav-label">Más</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu-overlay hidden" id="mobile-menu-overlay">
+        <div class="mobile-menu-panel glass-panel">
+            <div class="mobile-menu-header">
+                <h3>Menú Adicional</h3>
+                <button id="btn-close-mobile-menu" class="btn-close">&times;</button>
+            </div>
+            <div class="mobile-menu-body">
+                <a href="#aprende" class="nav-item-mobile" data-module="aprende">
+                    <span class="nav-icon">📚</span> Aprende
+                </a>
+                <a href="#cuenta" class="nav-item-mobile" data-module="cuenta">
+                    <span class="nav-icon">ℹ️</span> Cuenta
+                </a>
+                <button id="btn-logout-mobile" class="btn btn-secondary" style="width: 100%; margin-top: 16px;">
+                    Cerrar sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div class="dashboard-wrapper">
+        <!-- Header -->
+        <header class="dashboard-header glass-panel">
+            <div class="header-left">
+                <a href="./index.html">
+                    <img src="./kaudal-logo.png" alt="Kaudal Logo" class="header-mobile-logo" />
+                </a>
+                <h1 class="header-greeting" id="user-greeting">Hola</h1>
+                <span class="plan-badge" id="header-plan-badge">Básico</span>
+            </div>
+            <div class="header-right">
+                <button id="btn-logout" class="btn btn-secondary glow-effect"
+                    style="padding: 8px 16px; font-size: 0.9rem;">Cerrar sesión</button>
+            </div>
+        </header>
+
+        <!-- Main Dynamic Area (SPA Target) -->
+        <main class="dashboard-main" id="dashboard-content">
+            <!-- Injected by router.js -->
+            <div class="loading-state" style="display:flex; justify-content:center; align-items:center; height: 100%;">
+                <div class="spinner"></div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <div class="footer-links">
+                <a href="./privacidad.html" target="_blank">Privacidad</a>
+                <span class="sep">·</span>
+                <a href="./terminos.html" target="_blank">Términos</a>
+            </div>
+            <div class="footer-social">
+                <a href="https://linkedin.com" target="_blank">LinkedIn</a>
+                <a href="https://x.com" target="_blank">X/Twitter</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="./router.js"></script>
+</body>
+
+</html>
