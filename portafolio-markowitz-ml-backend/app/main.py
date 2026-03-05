@@ -55,7 +55,10 @@ def get_ml_status(supabase: Client = Depends(get_supabase)):
         "database": db_status
     }
 
-# Here you would include your routers:
+from app.routers import ingest, predict
+app.include_router(ingest.router, prefix="/api/ml/ingest", tags=["Ingestion"])
+app.include_router(predict.router, prefix="/api/ml/predict", tags=["Predictions"])
+
 # from app.routers import predictions, training
 # app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])
 # app.include_router(training.router, prefix="/api/training", tags=["Training"])
