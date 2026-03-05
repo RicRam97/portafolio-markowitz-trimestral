@@ -1,102 +1,161 @@
 <!DOCTYPE html>
 <html lang="es-MX">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Términos y Condiciones — Kaudal</title>
-    <meta name="description"
-        content="Términos y condiciones de uso de Kaudal, herramienta educativa de optimización de portafolios." />
-    <style>
-        body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-            max-width: 740px;
-            margin: 2rem auto;
-            padding: 0 1.25rem;
-            color: #1a1a2e;
-            line-height: 1.7;
-        }
-
-        h1 {
-            font-size: 1.6rem;
-            border-bottom: 3px solid #6c63ff;
-            padding-bottom: .5rem;
-        }
-
-        h2 {
-            font-size: 1.15rem;
-            margin-top: 1.8rem;
-            color: #6c63ff;
-        }
-
-        ul {
-            padding-left: 1.4rem;
-        }
-
-        a {
-            color: #6c63ff;
-        }
-
-        .meta {
-            font-size: .85rem;
-            color: #666;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="./kaudal-logo2.png" />
+  <title>Términos y Condiciones — Kaudal</title>
+  <meta name="description" content="Términos y condiciones de uso de Kaudal, herramienta educativa de optimización de portafolios." />
+  <!-- Google Fonts: Outfit (display), Inter (body), JetBrains Mono (metrics) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* Specific styles for legal pages */
+    .legal-content h1 { font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-main); font-family: var(--font-display); }
+    .legal-content h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--accent-primary); font-family: var(--font-display); }
+    .legal-content p, .legal-content li { color: var(--text-muted); line-height: 1.7; margin-bottom: 1rem; }
+    .legal-content ul { padding-left: 1.5rem; margin-bottom: 1.5rem; }
+    .legal-content a { color: var(--accent-primary); text-decoration: none; font-weight: 500; }
+    .legal-content a:hover { text-decoration: underline; }
+    .legal-content .meta { font-size: 0.9rem; color: var(--text-muted); opacity: 0.7; border-bottom: 1px solid var(--border-light); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .disclaimer-short {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid var(--border-light);
+        border-left: 4px solid var(--accent-primary);
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+        border-radius: 4px;
+    }
+    .disclaimer-modal { 
+        background: rgba(15, 23, 42, 0.8);
+        border: 2px solid var(--accent-primary); 
+        border-radius: 12px; 
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+    .disclaimer-modal h2 { margin-top: 0; color: var(--text-main); }
+    .legal-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+    .legal-content th, .legal-content td { border: 1px solid var(--border-light); padding: 0.75rem 1rem; text-align: left; color: var(--text-muted); }
+    .legal-content th { background: rgba(59, 130, 246, 0.1); color: var(--text-main); font-weight: 600; }
+    .legal-content pre { background: rgba(15, 23, 42, 0.8); padding: 1.25rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border-light); margin-bottom: 1.5rem;}
+    .legal-content code { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-main); }
+  </style>
 </head>
-
 <body>
 
-    <!-- URL sugerida: /terminos -->
+  <!-- ===== STICKY NAV BAR ===== -->
+  <nav class="landing-nav" id="landing-nav" style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--border-light);">
+    <div class="nav-inner">
+      <div class="nav-brand" id="nav-brand">
+        <a href="./index.html" style="display: flex; align-items: center; text-decoration: none;">
+          <img src="./kaudal-logo2.png" alt="Kaudal" class="nav-logo-img" />
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="./index.html" class="nav-link">Inicio</a>
+        <a href="./login.html" class="nav-link nav-auth-btn">Iniciar sesión</a>
+      </div>
+    </div>
+  </nav>
 
-    <h1>Términos y Condiciones</h1>
-    <p class="meta">Última actualización: 3 de marzo de 2026</p>
+  <!-- ===== PAGE CONTENT ===== -->
+  <div class="page-container" style="padding-top: 120px; padding-bottom: 80px; min-height: calc(100vh - 300px);">
+    <div class="about-page">
+      <article class="about-content glass-panel legal-content" style="max-width: 800px; margin: 0 auto; text-align: left; padding: 40px;">
+        <h1>Términos y Condiciones</h1>
+            <p class="meta">Última actualización: 3 de marzo de 2026</p>
+        
+            <h2>1. Naturaleza del servicio</h2>
+            <p>Kaudal es una <strong>herramienta educativa y matemática</strong> de optimización de portafolios de inversión. El
+                servicio <strong>NO constituye asesoría financiera, de inversión ni bursátil</strong> certificada por ninguna
+                autoridad reguladora mexicana (CNBV, CONSAR, Condusef). Toda decisión de inversión es responsabilidad exclusiva
+                del usuario.</p>
+        
+            <h2>2. Modelo Markowitz y sus limitaciones</h2>
+            <p>La optimización se basa en el modelo de Media-Varianza de Harry Markowitz. Este modelo utiliza <strong>datos
+                    históricos</strong> de rendimientos pasados, los cuales <strong>no garantizan rendimientos futuros</strong>.
+                Las proyecciones son aproximaciones matemáticas, no predicciones.</p>
+        
+            <h2>3. Límite de responsabilidad</h2>
+            <p>Kaudal, sus desarrolladores y colaboradores <strong>no se hacen responsables</strong> de:</p>
+            <ul>
+                <li>Pérdidas financieras derivadas de decisiones de inversión del usuario.</li>
+                <li>Errores en datos de mercado proporcionados por fuentes externas.</li>
+                <li>Interrupciones del servicio o fallas técnicas.</li>
+            </ul>
+            <p>El uso de la plataforma es bajo <strong>tu propio riesgo</strong>. Recomendamos consultar a un asesor financiero
+                certificado antes de invertir.</p>
+        
+            <h2>4. Uso permitido</h2>
+            <p>Al usar Kaudal, aceptas:</p>
+            <ul>
+                <li>Usar la plataforma solo con fines educativos y personales.</li>
+                <li>No realizar ingeniería inversa, descompilar o desensamblar el software.</li>
+                <li>No utilizar bots, scrapers o sistemas automatizados para extraer datos de la plataforma.</li>
+                <li>No reproducir, redistribuir ni comercializar los resultados de forma masiva.</li>
+            </ul>
+        
+            <h2>5. Propiedad intelectual</h2>
+            <p>Todo el contenido de Kaudal — incluyendo código, diseño, textos y logotipos — es propiedad de sus creadores y
+                está protegido por la Ley Federal del Derecho de Autor de México.</p>
+        
+            <h2>6. Cuenta y datos</h2>
+            <p>Eres responsable de mantener la confidencialidad de tu cuenta. Nos reservamos el derecho de suspender cuentas que
+                violen estos términos.</p>
+        
+            <h2>7. Modificaciones</h2>
+            <p>Podemos actualizar estos términos en cualquier momento. Si los cambios son significativos, te notificaremos por
+                correo electrónico. El uso continuado de la plataforma implica la aceptación de los términos actualizados.</p>
+        
+            <h2>8. Legislación aplicable</h2>
+            <p>Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier controversia será resuelta ante
+                los tribunales competentes de la Ciudad de México.</p>
+      </article>
+    </div>
+  </div>
 
-    <h2>1. Naturaleza del servicio</h2>
-    <p>Kaudal es una <strong>herramienta educativa y matemática</strong> de optimización de portafolios de inversión. El
-        servicio <strong>NO constituye asesoría financiera, de inversión ni bursátil</strong> certificada por ninguna
-        autoridad reguladora mexicana (CNBV, CONSAR, Condusef). Toda decisión de inversión es responsabilidad exclusiva
-        del usuario.</p>
+  <!-- ===== FOOTER ===== -->
+  <footer class="landing-footer">
+    <!-- Brand Badges -->
+    <div class="footer-badges">
+      <span class="brand-badge">🔒 Conexión Segura</span>
+      <span class="brand-badge">📊 Herramienta Educativa</span>
+    </div>
 
-    <h2>2. Modelo Markowitz y sus limitaciones</h2>
-    <p>La optimización se basa en el modelo de Media-Varianza de Harry Markowitz. Este modelo utiliza <strong>datos
-            históricos</strong> de rendimientos pasados, los cuales <strong>no garantizan rendimientos futuros</strong>.
-        Las proyecciones son aproximaciones matemáticas, no predicciones.</p>
+    <!-- Footer Links Grid -->
+    <div class="footer-links-row">
+      <div class="footer-col" style="text-align: left;">
+        <h4>Navegación</h4>
+        <a href="./index.html" class="footer-link">Inicio</a>
+        <a href="./login.html" class="footer-link">Iniciar sesión</a>
+      </div>
+      <div class="footer-col" style="text-align: left;">
+        <h4>Legal</h4>
+        <a href="./privacidad.html" class="footer-link">Privacidad</a>
+        <a href="./terminos.html" class="footer-link">Términos</a>
+        <a href="./cookies.html" class="footer-link">Cookies</a>
+        <a href="./disclaimer.html" class="footer-link">Disclaimer</a>
+      </div>
+      <div class="footer-col" style="text-align: left;">
+        <h4>Contacto</h4>
+        <a href="mailto:contacto@kaudal.com.mx" class="footer-link footer-email" style="justify-content: flex-start;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          contacto@kaudal.com.mx
+        </a>
+      </div>
+    </div>
 
-    <h2>3. Límite de responsabilidad</h2>
-    <p>Kaudal, sus desarrolladores y colaboradores <strong>no se hacen responsables</strong> de:</p>
-    <ul>
-        <li>Pérdidas financieras derivadas de decisiones de inversión del usuario.</li>
-        <li>Errores en datos de mercado proporcionados por fuentes externas.</li>
-        <li>Interrupciones del servicio o fallas técnicas.</li>
-    </ul>
-    <p>El uso de la plataforma es bajo <strong>tu propio riesgo</strong>. Recomendamos consultar a un asesor financiero
-        certificado antes de invertir.</p>
-
-    <h2>4. Uso permitido</h2>
-    <p>Al usar Kaudal, aceptas:</p>
-    <ul>
-        <li>Usar la plataforma solo con fines educativos y personales.</li>
-        <li>No realizar ingeniería inversa, descompilar o desensamblar el software.</li>
-        <li>No utilizar bots, scrapers o sistemas automatizados para extraer datos de la plataforma.</li>
-        <li>No reproducir, redistribuir ni comercializar los resultados de forma masiva.</li>
-    </ul>
-
-    <h2>5. Propiedad intelectual</h2>
-    <p>Todo el contenido de Kaudal — incluyendo código, diseño, textos y logotipos — es propiedad de sus creadores y
-        está protegido por la Ley Federal del Derecho de Autor de México.</p>
-
-    <h2>6. Cuenta y datos</h2>
-    <p>Eres responsable de mantener la confidencialidad de tu cuenta. Nos reservamos el derecho de suspender cuentas que
-        violen estos términos.</p>
-
-    <h2>7. Modificaciones</h2>
-    <p>Podemos actualizar estos términos en cualquier momento. Si los cambios son significativos, te notificaremos por
-        correo electrónico. El uso continuado de la plataforma implica la aceptación de los términos actualizados.</p>
-
-    <h2>8. Legislación aplicable</h2>
-    <p>Estos términos se rigen por las leyes de los Estados Unidos Mexicanos. Cualquier controversia será resuelta ante
-        los tribunales competentes de la Ciudad de México.</p>
+    <div class="footer-bottom">
+      <span>© 2026 Kaudal · Hecho en México 🇲🇽</span>
+      <span class="footer-sep">·</span>
+      <span>Herramienta con fines educativos. No constituye asesoría de inversión.</span>
+    </div>
+  </footer>
 
 </body>
-
 </html>

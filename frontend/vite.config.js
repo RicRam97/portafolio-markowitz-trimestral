@@ -13,6 +13,10 @@ export default defineConfig({
             input: {
                 main: resolve(__dirname, 'index.html'),
                 login: resolve(__dirname, 'login.html'),
+                privacidad: resolve(__dirname, 'privacidad.html'),
+                terminos: resolve(__dirname, 'terminos.html'),
+                disclaimer: resolve(__dirname, 'disclaimer.html'),
+                cookies: resolve(__dirname, 'cookies.html'),
             }
         }
     }

@@ -1,126 +1,169 @@
 <!DOCTYPE html>
 <html lang="es-MX">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Disclaimer Financiero — Kaudal</title>
-    <meta name="description"
-        content="Disclaimer financiero de Kaudal. Esta herramienta es educativa y no constituye asesoría financiera." />
-    <style>
-        body {
-            font-family: 'Inter', 'Segoe UI', sans-serif;
-            max-width: 740px;
-            margin: 2rem auto;
-            padding: 0 1.25rem;
-            color: #1a1a2e;
-            line-height: 1.7;
-        }
-
-        h1 {
-            font-size: 1.6rem;
-            border-bottom: 3px solid #6c63ff;
-            padding-bottom: .5rem;
-        }
-
-        h2 {
-            font-size: 1.15rem;
-            margin-top: 1.8rem;
-            color: #6c63ff;
-        }
-
-        ul {
-            padding-left: 1.4rem;
-        }
-
-        a {
-            color: #6c63ff;
-        }
-
-        .meta {
-            font-size: .85rem;
-            color: #666;
-        }
-
-        .disclaimer-short {
-            background: #f8f7ff;
-            border-left: 4px solid #6c63ff;
-            padding: .75rem 1rem;
-            margin: 1.5rem 0;
-            font-size: .9rem;
-        }
-
-        .disclaimer-modal {
-            background: #fff;
-            border: 2px solid #6c63ff;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/png" href="./kaudal-logo2.png" />
+  <title>Disclaimer Financiero — Kaudal</title>
+  <meta name="description" content="Disclaimer financiero de Kaudal. Esta herramienta es educativa y no constituye asesoría financiera." />
+  <!-- Google Fonts: Outfit (display), Inter (body), JetBrains Mono (metrics) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* Specific styles for legal pages */
+    .legal-content h1 { font-size: 2.2rem; margin-bottom: 0.5rem; color: var(--text-main); font-family: var(--font-display); }
+    .legal-content h2 { font-size: 1.5rem; margin-top: 2rem; margin-bottom: 1rem; color: var(--accent-primary); font-family: var(--font-display); }
+    .legal-content p, .legal-content li { color: var(--text-muted); line-height: 1.7; margin-bottom: 1rem; }
+    .legal-content ul { padding-left: 1.5rem; margin-bottom: 1.5rem; }
+    .legal-content a { color: var(--accent-primary); text-decoration: none; font-weight: 500; }
+    .legal-content a:hover { text-decoration: underline; }
+    .legal-content .meta { font-size: 0.9rem; color: var(--text-muted); opacity: 0.7; border-bottom: 1px solid var(--border-light); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+    .disclaimer-short {
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid var(--border-light);
+        border-left: 4px solid var(--accent-primary);
+        padding: 1.25rem;
+        margin: 1.5rem 0;
+        border-radius: 4px;
+    }
+    .disclaimer-modal { 
+        background: rgba(15, 23, 42, 0.8);
+        border: 2px solid var(--accent-primary); 
+        border-radius: 12px; 
+        padding: 2rem;
+        margin: 2rem 0;
+    }
+    .disclaimer-modal h2 { margin-top: 0; color: var(--text-main); }
+    .legal-content table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+    .legal-content th, .legal-content td { border: 1px solid var(--border-light); padding: 0.75rem 1rem; text-align: left; color: var(--text-muted); }
+    .legal-content th { background: rgba(59, 130, 246, 0.1); color: var(--text-main); font-weight: 600; }
+    .legal-content pre { background: rgba(15, 23, 42, 0.8); padding: 1.25rem; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border-light); margin-bottom: 1.5rem;}
+    .legal-content code { font-family: var(--font-mono); font-size: 0.9rem; color: var(--text-main); }
+  </style>
 </head>
-
 <body>
 
-    <!-- URL sugerida: /disclaimer (o integrar en las demás páginas) -->
+  <!-- ===== STICKY NAV BAR ===== -->
+  <nav class="landing-nav" id="landing-nav" style="background: rgba(15, 23, 42, 0.9); border-bottom: 1px solid var(--border-light);">
+    <div class="nav-inner">
+      <div class="nav-brand" id="nav-brand">
+        <a href="./index.html" style="display: flex; align-items: center; text-decoration: none;">
+          <img src="./kaudal-logo2.png" alt="Kaudal" class="nav-logo-img" />
+        </a>
+      </div>
+      <div class="nav-links">
+        <a href="./index.html" class="nav-link">Inicio</a>
+        <a href="./login.html" class="nav-link nav-auth-btn">Iniciar sesión</a>
+      </div>
+    </div>
+  </nav>
 
-    <h1>Disclaimer Financiero</h1>
-    <p class="meta">Última actualización: 3 de marzo de 2026</p>
+  <!-- ===== PAGE CONTENT ===== -->
+  <div class="page-container" style="padding-top: 120px; padding-bottom: 80px; min-height: calc(100vh - 300px);">
+    <div class="about-page">
+      <article class="about-content glass-panel legal-content" style="max-width: 800px; margin: 0 auto; text-align: left; padding: 40px;">
+        <h1>Disclaimer Financiero</h1>
+            <p class="meta">Última actualización: 3 de marzo de 2026</p>
+        
+            <!-- ============================================= -->
+            <!-- VERSIÓN CORTA — Para pie de pantalla de resultados -->
+            <!-- ============================================= -->
+        
+            <h2>Versión corta (pie de página)</h2>
+            <div class="disclaimer-short">
+                <p><strong>⚠️ Kaudal es una herramienta educativa. No constituye asesoría financiera. Los rendimientos pasados
+                        no garantizan resultados futuros. Invierte bajo tu propia responsabilidad.</strong></p>
+            </div>
+        
+            <p>Copia este texto para el footer de tus pantallas de resultados:</p>
+            <pre><code>&lt;p class="disclaimer-footer"&gt;⚠️ Kaudal es una herramienta educativa. No constituye asesoría financiera. Los rendimientos pasados no garantizan resultados futuros. Invierte bajo tu propia responsabilidad.&lt;/p&gt;</code></pre>
+        
+            <!-- ============================================= -->
+            <!-- VERSIÓN LARGA — Modal al crear cuenta -->
+            <!-- ============================================= -->
+        
+            <h2>Versión larga (modal de aceptación)</h2>
+            <div class="disclaimer-modal">
+                <h2 style="margin-top:0; color:#1a1a2e;">⚠️ Aviso importante antes de continuar</h2>
+        
+                <p>Al crear tu cuenta en <strong>Kaudal</strong>, reconoces y aceptas lo siguiente:</p>
+        
+                <ul>
+                    <li>Kaudal es una <strong>herramienta educativa y matemática</strong>. No es, ni pretende ser, un servicio
+                        de asesoría financiera, de inversión ni bursátil.</li>
+                    <li>No estamos registrados ni supervisados por la CNBV, CONSAR, Condusef ni ninguna autoridad financiera
+                        mexicana.</li>
+                    <li>Las optimizaciones se basan en el <strong>modelo de Markowitz</strong>, que utiliza datos históricos.
+                        <strong>Los rendimientos pasados no son indicador de rendimientos futuros.</strong></li>
+                    <li>Cualquier decisión de inversión que tomes es tu <strong>responsabilidad exclusiva</strong>. Kaudal no se
+                        hace responsable de pérdidas, ganancias ni resultados derivados del uso de la plataforma.</li>
+                    <li>Te recomendamos <strong>consultar a un asesor financiero certificado</strong> antes de tomar decisiones
+                        de inversión.</li>
+                </ul>
+        
+                <p>Si estás de acuerdo, haz clic en "Acepto y continuar" para crear tu cuenta.</p>
+            </div>
+        
+            <p>Copia este HTML para el contenido del modal:</p>
+            <pre><code>&lt;div class="disclaimer-modal-content"&gt;
+          &lt;h2&gt;⚠️ Aviso importante antes de continuar&lt;/h2&gt;
+          &lt;p&gt;Al crear tu cuenta en &lt;strong&gt;Kaudal&lt;/strong&gt;, reconoces y aceptas lo siguiente:&lt;/p&gt;
+          &lt;ul&gt;
+            &lt;li&gt;Kaudal es una &lt;strong&gt;herramienta educativa y matemática&lt;/strong&gt;. No es un servicio de asesoría financiera certificada.&lt;/li&gt;
+            &lt;li&gt;No estamos registrados ante la CNBV, CONSAR ni Condusef.&lt;/li&gt;
+            &lt;li&gt;Las optimizaciones usan el &lt;strong&gt;modelo de Markowitz&lt;/strong&gt; con datos históricos. Los rendimientos pasados no garantizan resultados futuros.&lt;/li&gt;
+            &lt;li&gt;Cualquier decisión de inversión es tu &lt;strong&gt;responsabilidad exclusiva&lt;/strong&gt;. No nos hacemos responsables de pérdidas.&lt;/li&gt;
+            &lt;li&gt;Recomendamos consultar a un &lt;strong&gt;asesor financiero certificado&lt;/strong&gt; antes de invertir.&lt;/li&gt;
+          &lt;/ul&gt;
+          &lt;label&gt;&lt;input type="checkbox" id="acceptDisclaimer" /&gt; He leído y acepto este aviso.&lt;/label&gt;
+          &lt;button id="btnAcceptDisclaimer" disabled&gt;Acepto y continuar&lt;/button&gt;
+        &lt;/div&gt;</code></pre>
+      </article>
+    </div>
+  </div>
 
-    <!-- ============================================= -->
-    <!-- VERSIÓN CORTA — Para pie de pantalla de resultados -->
-    <!-- ============================================= -->
-
-    <h2>Versión corta (pie de página)</h2>
-    <div class="disclaimer-short">
-        <p><strong>⚠️ Kaudal es una herramienta educativa. No constituye asesoría financiera. Los rendimientos pasados
-                no garantizan resultados futuros. Invierte bajo tu propia responsabilidad.</strong></p>
+  <!-- ===== FOOTER ===== -->
+  <footer class="landing-footer">
+    <!-- Brand Badges -->
+    <div class="footer-badges">
+      <span class="brand-badge">🔒 Conexión Segura</span>
+      <span class="brand-badge">📊 Herramienta Educativa</span>
     </div>
 
-    <p>Copia este texto para el footer de tus pantallas de resultados:</p>
-    <pre><code>&lt;p class="disclaimer-footer"&gt;⚠️ Kaudal es una herramienta educativa. No constituye asesoría financiera. Los rendimientos pasados no garantizan resultados futuros. Invierte bajo tu propia responsabilidad.&lt;/p&gt;</code></pre>
-
-    <!-- ============================================= -->
-    <!-- VERSIÓN LARGA — Modal al crear cuenta -->
-    <!-- ============================================= -->
-
-    <h2>Versión larga (modal de aceptación)</h2>
-    <div class="disclaimer-modal">
-        <h2 style="margin-top:0; color:#1a1a2e;">⚠️ Aviso importante antes de continuar</h2>
-
-        <p>Al crear tu cuenta en <strong>Kaudal</strong>, reconoces y aceptas lo siguiente:</p>
-
-        <ul>
-            <li>Kaudal es una <strong>herramienta educativa y matemática</strong>. No es, ni pretende ser, un servicio
-                de asesoría financiera, de inversión ni bursátil.</li>
-            <li>No estamos registrados ni supervisados por la CNBV, CONSAR, Condusef ni ninguna autoridad financiera
-                mexicana.</li>
-            <li>Las optimizaciones se basan en el <strong>modelo de Markowitz</strong>, que utiliza datos históricos.
-                <strong>Los rendimientos pasados no son indicador de rendimientos futuros.</strong></li>
-            <li>Cualquier decisión de inversión que tomes es tu <strong>responsabilidad exclusiva</strong>. Kaudal no se
-                hace responsable de pérdidas, ganancias ni resultados derivados del uso de la plataforma.</li>
-            <li>Te recomendamos <strong>consultar a un asesor financiero certificado</strong> antes de tomar decisiones
-                de inversión.</li>
-        </ul>
-
-        <p>Si estás de acuerdo, haz clic en "Acepto y continuar" para crear tu cuenta.</p>
+    <!-- Footer Links Grid -->
+    <div class="footer-links-row">
+      <div class="footer-col" style="text-align: left;">
+        <h4>Navegación</h4>
+        <a href="./index.html" class="footer-link">Inicio</a>
+        <a href="./login.html" class="footer-link">Iniciar sesión</a>
+      </div>
+      <div class="footer-col" style="text-align: left;">
+        <h4>Legal</h4>
+        <a href="./privacidad.html" class="footer-link">Privacidad</a>
+        <a href="./terminos.html" class="footer-link">Términos</a>
+        <a href="./cookies.html" class="footer-link">Cookies</a>
+        <a href="./disclaimer.html" class="footer-link">Disclaimer</a>
+      </div>
+      <div class="footer-col" style="text-align: left;">
+        <h4>Contacto</h4>
+        <a href="mailto:contacto@kaudal.com.mx" class="footer-link footer-email" style="justify-content: flex-start;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+            <polyline points="22,6 12,13 2,6" />
+          </svg>
+          contacto@kaudal.com.mx
+        </a>
+      </div>
     </div>
 
-    <p>Copia este HTML para el contenido del modal:</p>
-    <pre><code>&lt;div class="disclaimer-modal-content"&gt;
-  &lt;h2&gt;⚠️ Aviso importante antes de continuar&lt;/h2&gt;
-  &lt;p&gt;Al crear tu cuenta en &lt;strong&gt;Kaudal&lt;/strong&gt;, reconoces y aceptas lo siguiente:&lt;/p&gt;
-  &lt;ul&gt;
-    &lt;li&gt;Kaudal es una &lt;strong&gt;herramienta educativa y matemática&lt;/strong&gt;. No es un servicio de asesoría financiera certificada.&lt;/li&gt;
-    &lt;li&gt;No estamos registrados ante la CNBV, CONSAR ni Condusef.&lt;/li&gt;
-    &lt;li&gt;Las optimizaciones usan el &lt;strong&gt;modelo de Markowitz&lt;/strong&gt; con datos históricos. Los rendimientos pasados no garantizan resultados futuros.&lt;/li&gt;
-    &lt;li&gt;Cualquier decisión de inversión es tu &lt;strong&gt;responsabilidad exclusiva&lt;/strong&gt;. No nos hacemos responsables de pérdidas.&lt;/li&gt;
-    &lt;li&gt;Recomendamos consultar a un &lt;strong&gt;asesor financiero certificado&lt;/strong&gt; antes de invertir.&lt;/li&gt;
-  &lt;/ul&gt;
-  &lt;label&gt;&lt;input type="checkbox" id="acceptDisclaimer" /&gt; He leído y acepto este aviso.&lt;/label&gt;
-  &lt;button id="btnAcceptDisclaimer" disabled&gt;Acepto y continuar&lt;/button&gt;
-&lt;/div&gt;</code></pre>
+    <div class="footer-bottom">
+      <span>© 2026 Kaudal · Hecho en México 🇲🇽</span>
+      <span class="footer-sep">·</span>
+      <span>Herramienta con fines educativos. No constituye asesoría de inversión.</span>
+    </div>
+  </footer>
 
 </body>
-
 </html>
