@@ -88,7 +88,7 @@ export default function DemoPage() {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-            y: { ticks: { color: '#94a3b8', callback: (val: number) => '$' + val.toLocaleString() } },
+            y: { ticks: { color: '#94a3b8', callback: (val: number | string) => '$' + Number(val).toLocaleString() } },
             x: { ticks: { color: '#94a3b8' } }
         },
         plugins: {
