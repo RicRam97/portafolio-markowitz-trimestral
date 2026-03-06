@@ -1,0 +1,76 @@
+{
+  "categories": [
+    {
+      "id": "primeros-pasos",
+      "label": "Primeros pasos",
+      "questions": [
+        {
+          "q": "¿Cómo creo mi cuenta en Kaudal?",
+          "a": "Haz clic en \"Crear cuenta\" en la página de inicio, ingresa tu nombre, correo y contraseña. Recibirás un correo de confirmación para activar tu cuenta."
+        },
+        {
+          "q": "¿Cómo creo mi primer portafolio?",
+          "a": "Ve a la sección \"Optimizar\" en el dashboard. Selecciona los tickers (activos) que te interesen, ingresa tu presupuesto y haz clic en \"Optimizar\". El sistema calculará la mejor distribución usando el modelo de Markowitz."
+        },
+        {
+          "q": "¿Qué es Kaudal y para qué sirve?",
+          "a": "Kaudal es una herramienta educativa de optimización de portafolios basada en la Teoría Moderna de Portafolios de Harry Markowitz. Te permite simular y analizar combinaciones de activos financieros para entender cómo funciona la diversificación."
+        }
+      ]
+    },
+    {
+      "id": "estrategias",
+      "label": "Estrategias y Portafolios",
+      "questions": [
+        {
+          "q": "¿Qué es el modelo de Markowitz?",
+          "a": "Es un modelo matemático creado por Harry Markowitz (Premio Nobel 1990) que busca la combinación óptima de activos para maximizar el rendimiento esperado dado un nivel de riesgo. También se conoce como optimización de Media-Varianza."
+        },
+        {
+          "q": "¿Qué significa el Ratio de Sharpe en mis resultados?",
+          "a": "El Ratio de Sharpe mide cuánto rendimiento extra obtienes por cada unidad de riesgo. Un valor mayor a 1.0 se considera bueno, mayor a 2.0 es muy bueno. Te ayuda a comparar qué tan eficiente es un portafolio respecto al riesgo que asumes."
+        },
+        {
+          "q": "¿Qué es el rebalanceo y por qué importa?",
+          "a": "El rebalanceo es ajustar los pesos de tus activos para que vuelvan a la distribución original. Con el tiempo, los precios cambian y un activo puede representar más (o menos) de lo planeado, alterando tu nivel de riesgo."
+        }
+      ]
+    },
+    {
+      "id": "cuenta-pagos",
+      "label": "Mi cuenta y pagos",
+      "questions": [
+        {
+          "q": "¿Cómo cambio mi plan?",
+          "a": "Ve a la sección \"Mi Cuenta\" en el dashboard y selecciona el plan que desees. Los cambios se aplican de inmediato. Si actualizas, solo se cobra la diferencia proporcional al tiempo restante."
+        },
+        {
+          "q": "¿Puedo cancelar mi plan en cualquier momento?",
+          "a": "Sí. Puedes cancelar tu suscripción en cualquier momento desde \"Mi Cuenta\". Mantendrás el acceso hasta que termine tu periodo de facturación actual. No hay penalizaciones por cancelar."
+        },
+        {
+          "q": "¿Qué métodos de pago aceptan?",
+          "a": "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express). Todos los pagos se procesan de forma segura a través de Stripe. No almacenamos los datos de tu tarjeta en nuestros servidores."
+        }
+      ]
+    },
+    {
+      "id": "seguridad",
+      "label": "Seguridad y privacidad",
+      "questions": [
+        {
+          "q": "¿Cómo protegen mi contraseña?",
+          "a": "Tu contraseña se encripta con bcrypt antes de almacenarse. Nunca guardamos contraseñas en texto plano. Además, usamos Supabase Auth que cumple con los estándares de seguridad de la industria."
+        },
+        {
+          "q": "¿Qué datos personales almacenan?",
+          "a": "Solo almacenamos tu correo electrónico, nombre y los portafolios que guardas. No recopilamos datos financieros reales como números de cuenta o CLABE. Consulta nuestro Aviso de Privacidad para más detalles."
+        },
+        {
+          "q": "¿Pueden acceder a mis cuentas de inversión?",
+          "a": "No. Kaudal es una herramienta 100% educativa y de simulación. No nos conectamos a ninguna casa de bolsa ni cuenta bancaria. Los presupuestos que ingresas son solo números de referencia para los cálculos."
+        }
+      ]
+    }
+  ]
+}

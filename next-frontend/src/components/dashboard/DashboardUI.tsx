@@ -8,6 +8,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import {
     LayoutDashboard,
     TrendingUp,
+    Crosshair,
     UserCircle,
     CreditCard,
     Settings,
@@ -18,6 +19,7 @@ import {
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Inicio', href: '/dashboard' },
+    { icon: Crosshair, label: 'Optimizar', href: '/dashboard/optimizar' },
     { icon: TrendingUp, label: 'Estrategias', href: '/dashboard/estrategias' },
     { icon: UserCircle, label: 'Mi Perfil', href: '/dashboard/perfil' },
     { icon: CreditCard, label: 'Mi Cuenta', href: '/dashboard/cuenta' },
@@ -51,7 +53,7 @@ export default function DashboardUI({ nombre, email, testCompletado, children }:
     return (
         <div className="flex h-screen overflow-hidden bg-[var(--bg-dark)]">
             {/* DESKTOP SIDEBAR */}
-            <aside className="hidden lg:flex flex-col w-[240px] flex-shrink-0 bg-[rgba(11,17,32,0.98)] border-r border-[#1e293b]">
+            <aside className="max-lg:hidden flex flex-col w-[240px] flex-shrink-0 bg-[rgba(11,17,32,0.98)] border-r border-[#1e293b]">
                 {/* Logo */}
                 <div className="p-5 border-b border-[#1e293b]">
                     <Link href="/">
@@ -133,12 +135,12 @@ export default function DashboardUI({ nombre, email, testCompletado, children }:
                         </div>
 
                         {/* Persistent Footer */}
-                        <footer className="mt-8 py-6 px-4 border-t border-[#1e293b] text-center shrink-0 w-full mb-16 lg:mb-0 bg-[rgba(11,17,32,0.5)]">
+                        <footer className="mt-8 py-6 px-4 border-t border-[#1e293b] text-center shrink-0 w-full max-lg:mb-16 bg-[rgba(11,17,32,0.5)]">
                             <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs md:text-sm text-[var(--text-muted)]">
-                                <Link href="/soporte" className="hover:text-white transition-colors">Soporte</Link>
-                                <span className="hidden sm:inline">•</span>
+                                <a href="/faq" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Soporte</a>
+                                <span className="max-sm:hidden inline">•</span>
                                 <Link href="/privacidad" className="hover:text-white transition-colors">Aviso de Privacidad</Link>
-                                <span className="hidden sm:inline">•</span>
+                                <span className="max-sm:hidden inline">•</span>
                                 <Link href="/terminos" className="hover:text-white transition-colors">Términos y Condiciones</Link>
                             </div>
                             <p className="mt-4 text-xs text-[#64748b]">© {new Date().getFullYear()} Kaudal. Todos los derechos reservados.</p>

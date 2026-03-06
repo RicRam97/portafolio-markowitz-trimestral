@@ -24,8 +24,8 @@ export default function Footer() {
             <div className="footer-links-row">
                 <div className="footer-col">
                     <h4 style={{ fontFamily: 'var(--font-display)', marginBottom: '16px' }}>Navegación</h4>
-                    <Link href="/acerca" className="footer-link">Acerca de</Link>
-                    <Link href="/faq" className="footer-link">FAQ</Link>
+                    <Link href="/acerca" className="footer-link">Sobre Kaudal</Link>
+                    <Link href="/faq" className="footer-link">Soporte</Link>
                     <Link href="/dashboard" className="footer-link">Mi sesión</Link>
                 </div>
                 <div className="footer-col">

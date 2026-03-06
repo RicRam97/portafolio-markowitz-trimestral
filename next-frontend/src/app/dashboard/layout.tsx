@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // Fetch user profile for greeting and test completion status
     const { data: profile } = await supabase
         .from('profiles')
-        .select('nombre, test_completado')
+        .select('nombre, test_completado, plan')
         .eq('id', user.id)
         .single();
 

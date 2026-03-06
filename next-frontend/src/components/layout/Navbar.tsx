@@ -14,8 +14,8 @@ export default function Navbar() {
         { label: 'Conoce Kaudal', href: '/conoce' },
         { label: 'Planes', href: '/planes' },
         { label: 'Prueba gratuita', href: '/demo' },
-        { label: 'FAQ', href: '/faq' },
-        { label: 'Acerca de', href: '/acerca' },
+        { label: 'Soporte', href: '/faq' },
+        { label: 'Sobre Kaudal', href: '/acerca' },
     ];
 
     return (

@@ -14,7 +14,7 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Kaudal - Inversión Inteligente",
+  title: "Kaudal - Aprendizaje Financiero Inteligente",
   description: "Portafolio Markowitz Trimestral",
 };
 

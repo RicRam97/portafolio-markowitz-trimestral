@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email       TEXT,
     display_name TEXT,
-    plan        TEXT NOT NULL DEFAULT 'free'
-                    CHECK (plan IN ('free', 'pro', 'premium')),
+    plan        TEXT NOT NULL DEFAULT 'basico'
+                    CHECK (plan IN ('basico', 'pro', 'ultra')),
     onboarding_complete BOOLEAN NOT NULL DEFAULT false,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -241,6 +241,30 @@ CREATE TRIGGER set_updated_at_profiles
 CREATE TRIGGER set_updated_at_estrategias
     BEFORE UPDATE ON public.estrategias
     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at();
+
+
+-- ┌─────────────────────────────────────────────────────────────┐
+-- │ 8b. SUPPORT_TICKETS — Tickets de soporte del usuario       │
+-- └─────────────────────────────────────────────────────────────┘
+CREATE TABLE IF NOT EXISTS public.support_tickets (
+    id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    asunto     TEXT NOT NULL,
+    mensaje    TEXT NOT NULL,
+    tier       TEXT NOT NULL CHECK (tier IN ('pro', 'ultra')),
+    status     TEXT NOT NULL DEFAULT 'abierto'
+                   CHECK (status IN ('abierto', 'en_progreso', 'resuelto')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON public.support_tickets(user_id);
+
+ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage own tickets"
+    ON public.support_tickets FOR ALL
+    USING (auth.uid() = user_id)
+    WITH CHECK (auth.uid() = user_id);
 
 
 -- ══════════════════════════════════════════════════════════════
