@@ -44,8 +44,8 @@ export default function RecuperarPasswordPage() {
             }
 
             setSubmitted(true);
-        } catch (err: any) {
-            setErrorMsg(err.message || 'Ocurrió un error inesperado al enviar el correo.');
+        } catch (err: unknown) {
+            setErrorMsg(err instanceof Error ? err.message : 'Ocurrió un error inesperado al enviar el correo.');
         } finally {
             setLoading(false);
         }

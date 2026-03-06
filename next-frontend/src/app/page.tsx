@@ -86,7 +86,7 @@ export default function LandingPage() {
             <div className="feature-card glass-panel">
               <div className="feature-icon">🌱</div>
               <h3>Modo Principiantes</h3>
-              <p>El "Test de Sueños" traduce tus metas financieras en parámetros de simulación matemática.</p>
+              <p>El &ldquo;Test de Sueños&rdquo; traduce tus metas financieras en parámetros de simulación matemática.</p>
             </div>
             <div className="feature-card glass-panel">
               <div className="feature-icon">🌎</div>
@@ -149,7 +149,7 @@ export default function LandingPage() {
               <div style={{ fontSize: '2.5rem', marginBottom: '16px', textAlign: 'center' }}>🧮</div>
               <h3 style={{ fontSize: '1.5rem', marginBottom: '16px', fontFamily: 'var(--font-display)', textAlign: 'center' }}>Algoritmos Públicos (Open Core)</h3>
               <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '24px', textAlign: 'center' }}>
-                No usamos "inteligencia artificial mágica" que te promete rendimientos irreales. Toda nuestra matemática es pública y auditable, basada en la <strong>Teoría Moderna de Portafolios de Harry Markowitz</strong> (Premio Nobel, 1990).
+                No usamos &ldquo;inteligencia artificial mágica&rdquo; que te promete rendimientos irreales. Toda nuestra matemática es pública y auditable, basada en la <strong>Teoría Moderna de Portafolios de Harry Markowitz</strong> (Premio Nobel, 1990).
               </p>
               <ul style={{ listStyle: 'none', padding: 0, color: 'var(--text-muted)', gap: '16px', display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--success)' }}>✓</span> Optimizador de Varianza</li>
@@ -160,7 +160,7 @@ export default function LandingPage() {
             </div>
 
             <p style={{ color: 'var(--text-main)', fontStyle: 'italic', textAlign: 'center', marginTop: '32px', fontSize: '1.2rem', fontWeight: 600, lineHeight: 1.6 }}>
-              "Lo más arriesgado que puedes hacer en tu vida es no invertir en tu educación financiera"
+              &ldquo;Lo más arriesgado que puedes hacer en tu vida es no invertir en tu educación financiera&rdquo;
               <br />
               <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 400, marginTop: '8px', display: 'block' }}>- R. Kiyosaki</span>
             </p>

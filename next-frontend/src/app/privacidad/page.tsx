@@ -37,7 +37,7 @@ export default function PrivacidadPage() {
                         <p>No vendemos, alquilamos ni compartimos tus datos con terceros para fines publicitarios.</p>
 
                         <h2>Derechos ARCO</h2>
-                        <p>Tienes derecho a <strong>Acceder, Rectificar, Cancelar u Oponerte</strong> al tratamiento de tus datos personales. Para ejercer cualquiera de estos derechos, envía un correo a <a href="mailto:contacto@kaudal.com.mx">contacto@kaudal.com.mx</a> con el asunto "Derechos ARCO" e incluye:</p>
+                        <p>Tienes derecho a <strong>Acceder, Rectificar, Cancelar u Oponerte</strong> al tratamiento de tus datos personales. Para ejercer cualquiera de estos derechos, envía un correo a <a href="mailto:contacto@kaudal.com.mx">contacto@kaudal.com.mx</a> con el asunto &ldquo;Derechos ARCO&rdquo; e incluye:</p>
                         <ul>
                             <li>Tu nombre completo y correo registrado.</li>
                             <li>El derecho que deseas ejercer y la razón.</li>

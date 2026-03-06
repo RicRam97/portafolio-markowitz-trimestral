@@ -1,16 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 
 export default function DashboardPreview() {
     const [activeTab, setActiveTab] = useState<'distribution' | 'growth'>('distribution');
-    const [mounted, setMounted] = useState(false);
+    const mounted = useSyncExternalStore(() => () => {}, () => true, () => false);
 
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    if (!mounted) return null; // Avoid hydration mismatch for random values if any
+    if (!mounted) return null; // Avoid hydration mismatch
 
     return (
         <div className="preview-container glass-panel" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

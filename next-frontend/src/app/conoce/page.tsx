@@ -62,8 +62,8 @@ export default function ConocePage() {
                                     <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🌱</div>
                                     <h3 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '12px', fontFamily: 'var(--font-display)' }}>Test de Sueños y Simulaciones</h3>
                                     <p style={{ color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                                        ¿Apenas empiezas? Nuestra plataforma de simulación traduce tus objetivos personales ("Ahorrar para una
-                                        meta en 10 años") en
+                                        ¿Apenas empiezas? Nuestra plataforma de simulación traduce tus objetivos personales (&ldquo;Ahorrar para una
+                                        meta en 10 años&rdquo;) en
                                         parámetros matemáticos. Realizamos simulaciones de estrés para ver cómo habría reaccionado tu
                                         portafolio en momentos de crisis históricas.
                                     </p>

@@ -79,7 +79,7 @@ export default function AcercaPage() {
                                     </div>
                                 </div>
                                 <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontStyle: 'italic', borderLeft: '3px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
-                                    "Desarrollé Kaudal como una herramienta matemática honesta. Quiero empoderar a los verdaderos inversionistas para que tomen control de su propio proceso. Creo en la democratización de las herramientas de inversión."
+                                    &ldquo;Desarrollé Kaudal como una herramienta matemática honesta. Quiero empoderar a los verdaderos inversionistas para que tomen control de su propio proceso. Creo en la democratización de las herramientas de inversión.&rdquo;
                                 </p>
                             </div>
                         </section>

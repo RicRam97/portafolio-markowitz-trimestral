@@ -83,43 +83,46 @@ export default function ResultadosClient({ userId, tolerancia: serverTolerancia,
   const [saving, setSaving] = useState(false);
 
   // Merge server data with localStorage fallback (handles race condition after redirect)
-  const [tolerancia, setTolerancia] = useState<ToleranciaData | null>(serverTolerancia);
-  const [suenos, setSuenos] = useState<SuenosData | null>(serverSuenos);
+  const [tolerancia] = useState<ToleranciaData | null>(() => {
+    if (serverTolerancia) return serverTolerancia;
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('kaudal_tolerancia_result');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          perfil_resultado: parsed.perfil,
+          volatilidad_maxima: parsed.volatilidad_maxima,
+          puntaje_total: parsed.puntaje_total,
+          descripcion_perfil: parsed.descripcion_perfil ?? null,
+        };
+      }
+    } catch { /* ignore */ }
+    return null;
+  });
+
+  const [suenos] = useState<SuenosData | null>(() => {
+    if (serverSuenos) return serverSuenos;
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('kaudal_suenos_result');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          retorno_minimo_requerido: parsed.retorno_minimo_requerido,
+          nivel: parsed.nivel,
+          anos_horizonte: parsed.horizonte_anos ?? 0,
+          meta_tipo: '',
+        };
+      }
+    } catch { /* ignore */ }
+    return null;
+  });
 
   useEffect(() => {
-    // Load from localStorage if server didn't return data yet
-    if (!tolerancia) {
-      try {
-        const raw = localStorage.getItem('kaudal_tolerancia_result');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          setTolerancia({
-            perfil_resultado: parsed.perfil,
-            volatilidad_maxima: parsed.volatilidad_maxima,
-            puntaje_total: parsed.puntaje_total,
-            descripcion_perfil: parsed.descripcion_perfil ?? null,
-          });
-        }
-      } catch { /* ignore */ }
-    }
-    if (!suenos) {
-      try {
-        const raw = localStorage.getItem('kaudal_suenos_result');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          setSuenos({
-            retorno_minimo_requerido: parsed.retorno_minimo_requerido,
-            nivel: parsed.nivel,
-            anos_horizonte: parsed.horizonte_anos ?? 0,
-            meta_tipo: '',
-          });
-        }
-      } catch { /* ignore */ }
-    }
-
     const t = setTimeout(() => setVisible(true), 80);
     return () => clearTimeout(t);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   async function handleVerDashboard() {
     setSaving(true);
