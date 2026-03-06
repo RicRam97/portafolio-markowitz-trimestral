@@ -7,7 +7,7 @@ from supabase import create_client, Client
 app = FastAPI(
     title="Kaudal ML Backend",
     description="Backend de Machine Learning para optimización de portafolios",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # CORS configuration explicitly for Vercel
@@ -15,8 +15,8 @@ app = FastAPI(
 origins = [
     "https://kaudal.com.mx",
     "https://www.kaudal.com.mx",
-    "http://localhost:3000", # Next.js dev
-    "http://localhost:5173", # Vite dev (legacy)
+    "http://localhost:3000",  # Next.js dev
+    "http://localhost:5173",  # Vite dev (legacy)
 ]
 
 app.add_middleware(
@@ -29,38 +29,49 @@ app.add_middleware(
 
 # Supabase Connection
 SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") # We use service role for ML bypassing
+SUPABASE_KEY = os.getenv(
+    "SUPABASE_SERVICE_ROLE_KEY"
+)  # We use service role for ML bypassing
+
 
 def get_supabase() -> Client:
     if not SUPABASE_URL or not SUPABASE_KEY:
         raise ValueError("Missing Supabase credentials in environment variables.")
     return create_client(SUPABASE_URL, SUPABASE_KEY)
 
+
 # Railway required Health Check
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "service": "ml-backend"}
+
 
 # Basic Example Route using Supabase
 @app.get("/api/ml/status")
 def get_ml_status(supabase: Client = Depends(get_supabase)):
     try:
         # Example query just to confirm DB connection works
-        res = supabase.table("activos_precios").select("ticker").limit(1).execute()
+        supabase.table("activos_precios").select("ticker").limit(1).execute()
         db_status = "connected"
     except Exception as e:
         db_status = f"error: {str(e)}"
-        
-    return {
-        "status": "online",
-        "database": db_status
-    }
 
-from app.routers import ingest, predict, test_suenos, test_tolerancia
+    return {"status": "online", "database": db_status}
+
+
+# noqa: E402 — routers must be imported after app is configured
+from app.routers import ingest, predict, test_suenos, test_tolerancia  # noqa: E402
+
 app.include_router(ingest.router, prefix="/api/ml/ingest", tags=["Ingestion"])
 app.include_router(predict.router, prefix="/api/ml/predict", tags=["Predictions"])
-app.include_router(test_suenos.router, prefix="/api/ml/test-suenos", tags=["Perfil Inversionista"])
-app.include_router(test_tolerancia.router, prefix="/api/ml/test-tolerancia", tags=["Tolerancia al Riesgo"])
+app.include_router(
+    test_suenos.router, prefix="/api/ml/test-suenos", tags=["Perfil Inversionista"]
+)
+app.include_router(
+    test_tolerancia.router,
+    prefix="/api/ml/test-tolerancia",
+    tags=["Tolerancia al Riesgo"],
+)
 
 # from app.routers import predictions, training
 # app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])

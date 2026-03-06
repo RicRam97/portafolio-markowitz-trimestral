@@ -3,6 +3,7 @@ Router: POST /api/ml/test-tolerancia
 Recibe las 9 respuestas del test, calcula el perfil de riesgo,
 persiste en Supabase y dispara el cálculo del perfil combinado.
 """
+
 from __future__ import annotations
 
 import os
@@ -21,6 +22,7 @@ router = APIRouter()
 # Supabase dependency (mirrors the pattern in other routers)
 # ---------------------------------------------------------------------------
 
+
 def get_supabase() -> Client:
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
@@ -32,6 +34,7 @@ def get_supabase() -> Client:
 # ---------------------------------------------------------------------------
 # Schemas
 # ---------------------------------------------------------------------------
+
 
 class TestToleranciaInput(BaseModel):
     # Dimensión 1: Situación financiera
@@ -70,6 +73,7 @@ class TestToleranciaOutput(BaseModel):
 # ---------------------------------------------------------------------------
 # Endpoint
 # ---------------------------------------------------------------------------
+
 
 @router.post("/", response_model=TestToleranciaOutput)
 def post_test_tolerancia(
@@ -110,8 +114,12 @@ def post_test_tolerancia(
             "perfil_resultado": resultado["perfil"],
             "volatilidad_maxima": resultado["volatilidad_maxima"],
             "puntaje_total": resultado["puntaje_total"],
-            "puntaje_financiero": resultado["puntaje_por_dimension"]["situacion_financiera"],
-            "puntaje_experiencia": resultado["puntaje_por_dimension"]["experiencia_inversora"],
+            "puntaje_financiero": resultado["puntaje_por_dimension"][
+                "situacion_financiera"
+            ],
+            "puntaje_experiencia": resultado["puntaje_por_dimension"][
+                "experiencia_inversora"
+            ],
             "puntaje_emocional": resultado["puntaje_por_dimension"]["perfil_emocional"],
         }
         try:
@@ -131,8 +139,6 @@ def post_test_tolerancia(
         perfil=resultado["perfil"],
         volatilidad_maxima=resultado["volatilidad_maxima"],
         puntaje_total=resultado["puntaje_total"],
-        puntaje_por_dimension=PuntajePorDimension(
-            **resultado["puntaje_por_dimension"]
-        ),
+        puntaje_por_dimension=PuntajePorDimension(**resultado["puntaje_por_dimension"]),
         descripcion_perfil=resultado["descripcion_perfil"],
     )

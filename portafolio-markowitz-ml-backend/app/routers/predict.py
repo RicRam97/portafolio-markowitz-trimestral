@@ -15,18 +15,37 @@ CRON_SECRET = os.getenv("CRON_SECRET")
 
 # En una app de producción esto idealmente se extraería de Supabase leyendo `all_tickers`.
 DEFAULT_TICKERS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "JPM", "V", "JNJ",
-    "WMT", "PG", "MA", "UNH", "HD", "BAC", "DIS", "ADBE", "CRM", "NFLX"
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "NVDA",
+    "JPM",
+    "V",
+    "JNJ",
+    "WMT",
+    "PG",
+    "MA",
+    "UNH",
+    "HD",
+    "BAC",
+    "DIS",
+    "ADBE",
+    "CRM",
+    "NFLX",
 ]
+
 
 @router.post("/")
 async def run_ml_predictions(
     background_tasks: BackgroundTasks,
     authorization: Optional[str] = Header(None),
-    supabase: Client = Depends(get_supabase)
+    supabase: Client = Depends(get_supabase),
 ):
     """
-    Endpoint para ser llamado diariamente. Dispara el entrenamiento continuo 
+    Endpoint para ser llamado diariamente. Dispara el entrenamiento continuo
     (Rolling Window retraining) para la lista de tickers y guarda las predicciones en BD.
     Protegido por CRON_SECRET.
     """
@@ -42,5 +61,5 @@ async def run_ml_predictions(
 
     return {
         "status": "accepted",
-        "message": f"ML Model Training & Prediction dispatched for {len(DEFAULT_TICKERS)} assets."
+        "message": f"ML Model Training & Prediction dispatched for {len(DEFAULT_TICKERS)} assets.",
     }

@@ -2,14 +2,17 @@ import httpx
 import asyncio
 import pandas as pd
 import numpy as np
-from datetime import datetime
+from datetime import datetime  # noqa: F401 — used in type annotations
 from supabase import Client
 import logging
 import os
 
 log = logging.getLogger("ml-backend")
 
-async def _fetch_fmp_direct(client: httpx.AsyncClient, ticker: str, api_key: str) -> dict | None:
+
+async def _fetch_fmp_direct(
+    client: httpx.AsyncClient, ticker: str, api_key: str
+) -> dict | None:
     url = f"https://financialmodelingprep.com/stable/historical-price-eod/light?symbol={ticker}&apikey={api_key}"
     try:
         resp = await client.get(url, timeout=30.0)
@@ -22,16 +25,15 @@ async def _fetch_fmp_direct(client: httpx.AsyncClient, ticker: str, api_key: str
         log.error(f"Error FMP API para {ticker}: {e}")
         return None
 
-def fetch_and_ingest_prices(supabase: Client, tickers: list[str], period: str = "5y") -> dict:
+
+def fetch_and_ingest_prices(
+    supabase: Client, tickers: list[str], period: str = "5y"
+) -> dict:
     """
     Descarga datos históricos vía Financial Modeling Prep (FMP) y los almacena en la tabla activos_precios.
     Calcula los retornos diarios automáticamente.
     """
-    ingestion_stats = {
-        "success": 0,
-        "failed": 0,
-        "errors": []
-    }
+    ingestion_stats = {"success": 0, "failed": 0, "errors": []}
 
     if not tickers:
         log.warning("No se proporcionaron tickers para ingestar.")
@@ -67,7 +69,14 @@ def fetch_and_ingest_prices(supabase: Client, tickers: list[str], period: str = 
 
         try:
             df_ticker = pd.DataFrame(data["historical"])
-            if df_ticker.empty or "date" not in df_ticker.columns or ("adjClose" not in df_ticker.columns and "price" not in df_ticker.columns):
+            if (
+                df_ticker.empty
+                or "date" not in df_ticker.columns
+                or (
+                    "adjClose" not in df_ticker.columns
+                    and "price" not in df_ticker.columns
+                )
+            ):
                 ingestion_stats["failed"] += 1
                 continue
 
@@ -77,39 +86,45 @@ def fetch_and_ingest_prices(supabase: Client, tickers: list[str], period: str = 
             df_ticker.set_index("date", inplace=True)
 
             # Calcular retorno diario
-            price_col = 'price' if 'price' in df_ticker.columns else 'adjClose'
-            df_ticker['retorno_diario'] = df_ticker[price_col].pct_change()
+            price_col = "price" if "price" in df_ticker.columns else "adjClose"
+            df_ticker["retorno_diario"] = df_ticker[price_col].pct_change()
             df_ticker.replace([np.inf, -np.inf], np.nan, inplace=True)
 
             # Preparar registros a BD
             records = []
             for date, row in df_ticker.iterrows():
-                retorno = row.get('retorno_diario')
+                retorno = row.get("retorno_diario")
                 if pd.isna(retorno):
                     retorno = None
-                    
+
                 fecha_str = date.strftime("%Y-%m-%d")
                 vol = row.get("volume", 0)
-                records.append({
-                    "ticker": ticker,
-                    "fecha": fecha_str,
-                    "precio_cierre": float(row[price_col]),
-                    "volumen": int(vol) if pd.notna(vol) else 0,
-                    "retorno_diario": float(retorno) if retorno is not None else None
-                })
-            
+                records.append(
+                    {
+                        "ticker": ticker,
+                        "fecha": fecha_str,
+                        "precio_cierre": float(row[price_col]),
+                        "volumen": int(vol) if pd.notna(vol) else 0,
+                        "retorno_diario": (
+                            float(retorno) if retorno is not None else None
+                        ),
+                    }
+                )
+
             # Upsert en chunks para Supabase limit
             batch_size = 500
             for i in range(0, len(records), batch_size):
-                batch = records[i:i + batch_size]
+                batch = records[i : i + batch_size]
                 try:
                     supabase.table("activos_precios").upsert(batch).execute()
                 except Exception as db_err:
                     log.error(f"Error guardando lote de {ticker} en BD: {db_err}")
                     raise db_err
-                
+
             ingestion_stats["success"] += 1
-            log.info(f"[{ticker}] ✅ Procesados y guardados {len(records)} días de historia (FMP).")
+            log.info(
+                f"[{ticker}] ✅ Procesados y guardados {len(records)} días de historia (FMP)."
+            )
 
         except Exception as e:
             log.error(f"Error procesando el ticker {ticker}: {e}")

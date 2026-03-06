@@ -17,15 +17,34 @@ CRON_SECRET = os.getenv("CRON_SECRET")
 # Una lista estática de prueba de los tickers más populares para ingestar
 # En un sistema real más grande, esto se podría leer desde otra tabla de Supabase o un JSON.
 DEFAULT_TICKERS = [
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "JPM", "V", "JNJ",
-    "WMT", "PG", "MA", "UNH", "HD", "BAC", "DIS", "ADBE", "CRM", "NFLX"
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "TSLA",
+    "NVDA",
+    "JPM",
+    "V",
+    "JNJ",
+    "WMT",
+    "PG",
+    "MA",
+    "UNH",
+    "HD",
+    "BAC",
+    "DIS",
+    "ADBE",
+    "CRM",
+    "NFLX",
 ]
+
 
 @router.post("/")
 async def run_data_ingestion(
     background_tasks: BackgroundTasks,
     authorization: Optional[str] = Header(None),
-    supabase: Client = Depends(get_supabase)
+    supabase: Client = Depends(get_supabase),
 ):
     """
     Endpoint diseñado para ser llamado diariamente por un Cron Job (ej. cron-job.org o Railway Cron).

@@ -3,6 +3,7 @@ Servicio: Test de Tolerancia al Riesgo
 Calcula el perfil de riesgo de un inversionista a partir de 9 preguntas
 agrupadas en 3 dimensiones: situación financiera, experiencia y perfil emocional.
 """
+
 from __future__ import annotations
 
 from typing import Literal
@@ -30,32 +31,63 @@ _PREOCUPACION_SCORES: dict[str, int] = {
 # (label, volatilidad_maxima, descripcion)
 _PERFIL_MAP: list[tuple[int, int, str, float, str]] = [
     # min, max, label, sigma, descripcion
-    (0,  4,  "Conservador",  0.08, (
-        "Priorizas la preservación de tu capital por encima del crecimiento. "
-        "Un portafolio de renta fija y activos de bajo riesgo es ideal para ti."
-    )),
-    (5,  8,  "Moderado",     0.12, (
-        "Buscas un balance entre seguridad y crecimiento. "
-        "Un portafolio mixto con predominancia de renta fija se adapta a tu perfil."
-    )),
-    (9,  12, "Balanceado",   0.16, (
-        "Aceptas cierta volatilidad a cambio de un mayor potencial de rendimiento. "
-        "Una mezcla equilibrada entre renta fija y variable es tu punto óptimo."
-    )),
-    (13, 16, "Crecimiento",  0.22, (
-        "Tu objetivo principal es el crecimiento del capital a largo plazo. "
-        "Un portafolio con alta exposición a renta variable encaja con tus metas."
-    )),
-    (17, 20, "Agresivo",     0.30, (
-        "Tienes alta tolerancia al riesgo y buscas maximizar el rendimiento. "
-        "Un portafolio concentrado en renta variable y activos de alto crecimiento es tu terreno."
-    )),
+    (
+        0,
+        4,
+        "Conservador",
+        0.08,
+        (
+            "Priorizas la preservación de tu capital por encima del crecimiento. "
+            "Un portafolio de renta fija y activos de bajo riesgo es ideal para ti."
+        ),
+    ),
+    (
+        5,
+        8,
+        "Moderado",
+        0.12,
+        (
+            "Buscas un balance entre seguridad y crecimiento. "
+            "Un portafolio mixto con predominancia de renta fija se adapta a tu perfil."
+        ),
+    ),
+    (
+        9,
+        12,
+        "Balanceado",
+        0.16,
+        (
+            "Aceptas cierta volatilidad a cambio de un mayor potencial de rendimiento. "
+            "Una mezcla equilibrada entre renta fija y variable es tu punto óptimo."
+        ),
+    ),
+    (
+        13,
+        16,
+        "Crecimiento",
+        0.22,
+        (
+            "Tu objetivo principal es el crecimiento del capital a largo plazo. "
+            "Un portafolio con alta exposición a renta variable encaja con tus metas."
+        ),
+    ),
+    (
+        17,
+        20,
+        "Agresivo",
+        0.30,
+        (
+            "Tienes alta tolerancia al riesgo y buscas maximizar el rendimiento. "
+            "Un portafolio concentrado en renta variable y activos de alto crecimiento es tu terreno."
+        ),
+    ),
 ]
 
 
 # ---------------------------------------------------------------------------
 # Core scoring function
 # ---------------------------------------------------------------------------
+
 
 def calcular_tolerancia(
     *,
@@ -118,6 +150,7 @@ def _mapear_perfil(total: int) -> tuple[str, float, str]:
 # This function will merge tolerance + dreams test results into a final
 # investor profile once section 3.3 is implemented.
 # ---------------------------------------------------------------------------
+
 
 def calcular_perfil_combinado(user_id: str, supabase) -> dict | None:
     """

@@ -27,7 +27,9 @@ class Moneda(str, Enum):
 class TestSuenosInput(BaseModel):
     meta_tipo: MetaTipo
     meta_descripcion: Optional[str] = None
-    meta_dinero: float = Field(..., gt=0, description="Monto objetivo en la moneda seleccionada")
+    meta_dinero: float = Field(
+        ..., gt=0, description="Monto objetivo en la moneda seleccionada"
+    )
     capital_inicial: float = Field(..., ge=0)
     ahorro_mensual: float = Field(..., ge=0)
     anos_horizonte: int = Field(..., ge=1, le=50)
@@ -47,6 +49,7 @@ class TestSuenosOutput(BaseModel):
 def get_supabase() -> Client:
     import os
     from supabase import create_client
+
     url = os.getenv("SUPABASE_URL")
     key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     if not url or not key:
