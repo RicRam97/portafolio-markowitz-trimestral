@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createBrowserClient } from '@supabase/ssr';
 import Image from 'next/image';
 import Link from 'next/link';
 import { z } from 'zod';
@@ -32,8 +31,8 @@ export default function RecuperarPasswordPage() {
         setLoading(true);
         try {
             const redirectUrl = typeof window !== 'undefined'
-                ? `${window.location.origin}/nueva-password`
-                : 'http://localhost:3000/nueva-password';
+                ? `${window.location.origin}/auth/callback?next=/nueva-password`
+                : `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?next=/nueva-password`;
 
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
                 redirectTo: redirectUrl,

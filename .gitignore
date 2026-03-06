@@ -25,6 +25,10 @@ frontend/dist/
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+memory/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -15,7 +15,8 @@ app = FastAPI(
 origins = [
     "https://kaudal.com.mx",
     "https://www.kaudal.com.mx",
-    "http://localhost:5173", # For local Vite development
+    "http://localhost:3000", # Next.js dev
+    "http://localhost:5173", # Vite dev (legacy)
 ]
 
 app.add_middleware(
@@ -55,9 +56,11 @@ def get_ml_status(supabase: Client = Depends(get_supabase)):
         "database": db_status
     }
 
-from app.routers import ingest, predict
+from app.routers import ingest, predict, test_suenos, test_tolerancia
 app.include_router(ingest.router, prefix="/api/ml/ingest", tags=["Ingestion"])
 app.include_router(predict.router, prefix="/api/ml/predict", tags=["Predictions"])
+app.include_router(test_suenos.router, prefix="/api/ml/test-suenos", tags=["Perfil Inversionista"])
+app.include_router(test_tolerancia.router, prefix="/api/ml/test-tolerancia", tags=["Tolerancia al Riesgo"])
 
 # from app.routers import predictions, training
 # app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])

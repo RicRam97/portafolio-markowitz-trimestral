@@ -47,9 +47,9 @@ export default function PlanesPage() {
                                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--success)' }}>✓</span> Hasta 5 optimizaciones al mes</li>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--success)' }}>✓</span> Acceso al Directorio Global (500+ activos)</li>
-                                    <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--success)' }}>✓</span> Test de Sueños Básico</li>
+                                    <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--success)' }}>✓</span> Tests de perfil de inversionista</li>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--success)' }}>✓</span> Estrategia de Max Sharpe Ratio</li>
-                                    <li style={{ display: 'flex', gap: '8px', color: 'var(--text-muted)' }}><span style={{ color: 'var(--border-light)' }}>✗</span> Sin estrategias avanzadas (HRP)</li>
+                                    <li style={{ display: 'flex', gap: '8px', color: 'var(--text-muted)' }}><span style={{ color: 'var(--border-light)' }}>✗</span> Sin estrategias avanzadas (HRP/Machine Learning/BigData)</li>
                                     <li style={{ display: 'flex', gap: '8px', color: 'var(--text-muted)' }}><span style={{ color: 'var(--border-light)' }}>✗</span> Sin reportes PDF</li>
                                 </ul>
                                 <button className="btn btn-secondary" style={{ width: '100%' }}>Registrarme Gratis</button>
@@ -68,7 +68,7 @@ export default function PlanesPage() {
                                 <div className="price-subtitle" style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
                                     {isAnnual ? 'O $149 MXN / mes facturado anualmente' : 'Facturado mensualmente'}
                                 </div>
-                                <p style={{ color: 'var(--accent-primary)', fontWeight: 600, fontSize: '0.95rem', marginBottom: '8px', minHeight: '24px' }}>Diseñado para gestionar portafolios mayores a $80,000 MXN.</p>
+                                <p style={{ color: 'var(--accent-primary)', fontWeight: 600, fontSize: '0.95rem', marginBottom: '8px', minHeight: '24px' }}>Diseñado para simular portafolios mayores a $80,000 MXN.</p>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.90rem', marginBottom: '20px', minHeight: '40px' }}>Maximiza tus rendimientos con herramientas avanzadas.</p>
                                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--accent-primary)' }}>✓</span> Optimizaciones ilimitadas</li>
@@ -96,7 +96,7 @@ export default function PlanesPage() {
                                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 32px 0', flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--warning)' }}>✓</span> Todo en el plan Pro</li>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--warning)' }}>✓</span> Portafolios Guardados Ilimitados</li>
-                                    <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--warning)' }}>✓</span> Inclusión de Criptomonedas y Fibras</li>
+                                    <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--warning)' }}>✓</span> Inclusión de los complementos de Machine Learning y BigData</li>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--warning)' }}>✓</span> Alertas de desviación por email</li>
                                     <li style={{ display: 'flex', gap: '8px' }}><span style={{ color: 'var(--warning)' }}>✓</span> Prioridad de soporte</li>
                                 </ul>
