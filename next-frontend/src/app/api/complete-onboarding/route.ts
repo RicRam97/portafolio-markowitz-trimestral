@@ -24,5 +24,12 @@ export async function POST() {
     );
   }
 
+  if (count === 0) {
+    return NextResponse.json(
+      { error: 'No se encontró perfil para este usuario', userId: user.id },
+      { status: 404 },
+    );
+  }
+
   return NextResponse.json({ ok: true, userId: user.id, rowsUpdated: count });
 }

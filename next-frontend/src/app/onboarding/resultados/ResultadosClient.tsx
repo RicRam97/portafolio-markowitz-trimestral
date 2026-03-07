@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 interface ToleranciaData {
   perfil_resultado: string;
   volatilidad_maxima: number;
@@ -70,7 +69,6 @@ const NIVEL_LABELS: Record<string, { label: string; color: string }> = {
 // ---------------------------------------------------------------------------
 
 export default function ResultadosClient({ userId, tolerancia: serverTolerancia, suenos: serverSuenos }: Props) {
-  const router = useRouter();
   const [visible, setVisible] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -133,7 +131,8 @@ export default function ResultadosClient({ userId, tolerancia: serverTolerancia,
 
       localStorage.removeItem('kaudal_tolerancia_result');
       localStorage.removeItem('kaudal_suenos_result');
-      router.push('/dashboard');
+      // Full page load to ensure dashboard layout runs fresh on the server
+      window.location.href = '/dashboard';
     } catch (err) {
       console.error('Error inesperado:', err);
       setSaveError('Error de conexión. Intenta de nuevo.');
