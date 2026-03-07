@@ -38,30 +38,23 @@ interface OptimizationLoaderProps {
     model: OptimizerModel;
 }
 
-export default function OptimizationLoader({ model }: OptimizationLoaderProps) {
-    const messages = MESSAGES[model];
+function LoaderInner({ messages }: { messages: string[] }) {
     const [index, setIndex] = useState(0);
 
     useEffect(() => {
-        setIndex(0);
         const interval = setInterval(() => {
             setIndex((prev) => (prev < messages.length - 1 ? prev + 1 : prev));
         }, 2200);
         return () => clearInterval(interval);
-    }, [model, messages.length]);
+    }, [messages.length]);
 
     return (
         <div className="glass-panel p-8 flex flex-col items-center justify-center gap-4 text-center">
-            {/* Spinner */}
             <div className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
                 style={{ borderColor: 'var(--accent-primary)', borderTopColor: 'transparent' }} />
-
-            {/* Current message */}
             <p className="text-sm font-semibold" style={{ color: 'var(--text-main)' }}>
                 {messages[index]}
             </p>
-
-            {/* Progress dots */}
             <div className="flex gap-1.5">
                 {messages.map((_, i) => (
                     <div
@@ -73,8 +66,17 @@ export default function OptimizationLoader({ model }: OptimizationLoaderProps) {
                     />
                 ))}
             </div>
+        </div>
+    );
+}
 
-            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+export default function OptimizationLoader({ model }: OptimizationLoaderProps) {
+    const messages = MESSAGES[model];
+
+    return (
+        <div>
+            <LoaderInner key={model} messages={messages} />
+            <p className="text-xs text-center mt-3" style={{ color: 'var(--text-muted)' }}>
                 {model === 'montecarlo'
                     ? 'La simulacion Monte Carlo puede tardar unos segundos adicionales.'
                     : 'Esto suele tardar menos de 5 segundos.'}
