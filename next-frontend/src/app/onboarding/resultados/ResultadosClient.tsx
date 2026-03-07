@@ -123,10 +123,10 @@ export default function ResultadosClient({ userId, tolerancia: serverTolerancia,
     setSaveError(null);
     try {
       const res = await fetch('/api/complete-onboarding', { method: 'POST' });
+      const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        setSaveError(body.error || 'No pudimos guardar tu perfil. Intenta de nuevo.');
+        setSaveError(`Error (${res.status}): ${body.error || body.detail || 'desconocido'}`);
         setSaving(false);
         return;
       }
