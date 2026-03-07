@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
-
 interface ToleranciaData {
   perfil_resultado: string;
   volatilidad_maxima: number;
@@ -67,12 +65,6 @@ const NIVEL_LABELS: Record<string, { label: string; color: string }> = {
   muy_alto:{ label: 'Muy exigente', color: '#DC2626' },
 };
 
-const createSupabase = () =>
-  createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -124,18 +116,29 @@ export default function ResultadosClient({ userId, tolerancia: serverTolerancia,
     return () => clearTimeout(t);
   }, []);
 
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   async function handleVerDashboard() {
     setSaving(true);
+    setSaveError(null);
     try {
-      const supabase = createSupabase();
-      await supabase
-        .from('profiles')
-        .update({ onboarding_completado: true })
-        .eq('id', userId);
+      const res = await fetch('/api/complete-onboarding', { method: 'POST' });
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setSaveError(body.error || 'No pudimos guardar tu perfil. Intenta de nuevo.');
+        setSaving(false);
+        return;
+      }
+
       localStorage.removeItem('kaudal_tolerancia_result');
       localStorage.removeItem('kaudal_suenos_result');
-    } catch { /* best-effort */ }
-    router.push('/dashboard');
+      router.push('/dashboard');
+    } catch (err) {
+      console.error('Error inesperado:', err);
+      setSaveError('Error de conexión. Intenta de nuevo.');
+      setSaving(false);
+    }
   }
 
   if (!tolerancia) {
@@ -317,6 +320,17 @@ export default function ResultadosClient({ userId, tolerancia: serverTolerancia,
             {meta.mensaje}
           </p>
         </div>
+
+        {/* Error */}
+        {saveError && (
+          <div style={{
+            marginBottom: '16px', padding: '12px 14px',
+            background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)',
+            borderRadius: '10px', color: '#fca5a5', fontSize: '0.85rem',
+          }}>
+            {saveError}
+          </div>
+        )}
 
         {/* CTA */}
         <button
