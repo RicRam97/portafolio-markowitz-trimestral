@@ -13,7 +13,7 @@ export default function Navbar() {
         { label: 'Inicio', href: '/' },
         { label: 'Conoce Kaudal', href: '/conoce' },
         { label: 'Planes', href: '/planes' },
-        { label: 'Demo Interaactiva', href: '/demo' },
+        { label: 'Demo Interactiva', href: '/demo' },
         { label: 'Soporte', href: '/faq' },
         { label: 'Sobre Kaudal', href: '/acerca' },
     ];
