@@ -5,11 +5,12 @@ from fastapi import FastAPI, HTTPException, Request, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 import asyncio
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 import yaml
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 # slowapi — Rate Limiting
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -22,10 +23,11 @@ from data import (
     calcular_perfil_por_meta, calcular_impacto_volatilidad, simular_crisis,
     comparar_instrumentos, obtener_dividend_yields_batch,
 )
-from optimizer import optimize_markowitz, optimize_hrp, run_monte_carlo, smart_beta_filter
-from config import log, CORS_ORIGINS, ENVIRONMENT, RATE_LIMIT_AUTH, RATE_LIMIT_ANON, CRON_SECRET
+from optimizer import optimize_markowitz, optimize_hrp, run_monte_carlo, smart_beta_filter, MarkowitzOptimizer, OptimizerError
+from config import log, CORS_ORIGINS, ENVIRONMENT, RATE_LIMIT_AUTH, RATE_LIMIT_ANON, CRON_SECRET, get_supabase_client
 from auth import get_current_user, get_optional_user
 from data_fetcher import get_historical_prices, get_benchmarks, DataFetchError
+from data_fetcher.fetcher import get_historical_prices_fmp
 from ml_pipeline import ingest_daily_prices, train_and_predict
 
 # ── Rate Limiter Setup ──────────────────────────────────────
@@ -510,6 +512,136 @@ async def optimize_portfolio_sse(
             yield f'data: {json.dumps(err)}\\n\\n'
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# ════════════════════════════════════════════════════════════
+#  POST /optimizar/markowitz — Endpoint dedicado Markowitz + FMP
+# ════════════════════════════════════════════════════════════
+
+
+class MarkowitzInput(BaseModel):
+    tickers: list[str] = Field(..., min_length=2, description="Lista de simbolos, ej. ['AAPL', 'GOOGL', 'MSFT']")
+    fecha_inicio: Optional[date] = Field(None, description="Fecha inicio (default: 3 anios atras)")
+    fecha_fin: Optional[date] = Field(None, description="Fecha fin (default: hoy)")
+    tasa_libre_riesgo: Optional[float] = Field(0.04, description="Tasa libre de riesgo anual (default 0.04)")
+    peso_maximo: Optional[float] = Field(0.25, ge=0.05, le=1.0, description="Peso maximo por activo (default 0.25)")
+    volatilidad_maxima: Optional[float] = Field(None, ge=0.01, le=1.0, description="Volatilidad maxima permitida del portafolio")
+
+
+class PortafolioOptimo(BaseModel):
+    weights: dict[str, float]
+    expected_return: float
+    volatility: float
+    sharpe_ratio: float
+
+
+class MarkowitzOutput(BaseModel):
+    portafolio_optimo: PortafolioOptimo
+    frontera_eficiente: list[dict]
+    tickers_incluidos: list[str]
+    fecha_calculo: datetime
+
+
+@app.post("/optimizar/markowitz", response_model=MarkowitzOutput)
+@limiter.limit(RATE_LIMIT_AUTH)
+async def optimizar_markowitz_endpoint(
+    request: Request,
+    req: MarkowitzInput,
+    user: dict = Depends(get_current_user),
+):
+    """Optimiza un portafolio Markowitz usando datos de FMP con cache en Supabase."""
+    log.info(f"Markowitz request from user={user['user_id']}, tickers={req.tickers}")
+
+    # Defaults de fechas
+    fecha_fin = req.fecha_fin or date.today()
+    fecha_inicio = req.fecha_inicio or date(fecha_fin.year - 3, fecha_fin.month, fecha_fin.day)
+    tasa_libre_riesgo = req.tasa_libre_riesgo if req.tasa_libre_riesgo is not None else 0.04
+    peso_maximo = req.peso_maximo if req.peso_maximo is not None else 0.25
+
+    # Normalizar tickers
+    tickers = [t.strip().upper() for t in req.tickers if t.strip()]
+    if len(tickers) < 2:
+        raise HTTPException(status_code=422, detail="Debe proveer al menos 2 tickers validos.")
+
+    # ── 1. Obtener precios historicos (FMP + Cache-Aside) ─────────
+    try:
+        data = await asyncio.to_thread(
+            get_historical_prices_fmp, tickers, fecha_inicio, fecha_fin
+        )
+    except DataFetchError as e:
+        if e.failed_tickers:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}",
+            )
+        raise HTTPException(status_code=422, detail=str(e))
+
+    log_returns = data["returns"]
+    tickers_incluidos = data["tickers"]
+    failed = data["failed_tickers"]
+
+    # Validar datos suficientes (6 meses)
+    if len(log_returns) < 126:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).",
+        )
+
+    if len(tickers_incluidos) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}",
+        )
+
+    # ── 2. Optimizar ─────────────────────────────────────────────
+    try:
+        optimizer = MarkowitzOptimizer(
+            log_returns=log_returns,
+            tasa_libre_riesgo=tasa_libre_riesgo,
+            peso_maximo=peso_maximo,
+            volatilidad_maxima=req.volatilidad_maxima,
+        )
+        portafolio_optimo = await asyncio.to_thread(optimizer.optimize)
+        frontera_eficiente = await asyncio.to_thread(optimizer.efficient_frontier, 50)
+    except OptimizerError as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"La optimizacion no convergio. Intenta con otros tickers o parametros. Detalle: {str(e)}",
+        )
+
+    fecha_calculo = datetime.now()
+
+    # ── 3. Guardar en Supabase (portafolios_calculados, guardado=false) ──
+    try:
+        sb = get_supabase_client()
+        sb.table("portafolios_calculados").insert({
+            "user_id": user["user_id"],
+            "tickers": tickers_incluidos,
+            "parametros": {
+                "fecha_inicio": fecha_inicio.isoformat(),
+                "fecha_fin": fecha_fin.isoformat(),
+                "tasa_libre_riesgo": tasa_libre_riesgo,
+                "peso_maximo": peso_maximo,
+                "volatilidad_maxima": req.volatilidad_maxima,
+            },
+            "resultado": {
+                "portafolio_optimo": portafolio_optimo,
+                "frontera_eficiente": frontera_eficiente,
+            },
+            "guardado": False,
+            "fecha_calculo": fecha_calculo.isoformat(),
+        }).execute()
+    except Exception as e:
+        log.warning(f"No se pudo guardar en portafolios_calculados: {e}")
+
+    increment_optimization_count()
+
+    return MarkowitzOutput(
+        portafolio_optimo=PortafolioOptimo(**portafolio_optimo),
+        frontera_eficiente=frontera_eficiente,
+        tickers_incluidos=tickers_incluidos,
+        fecha_calculo=fecha_calculo,
+    )
 
 
 if __name__ == "__main__":

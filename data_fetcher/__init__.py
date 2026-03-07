@@ -1,5 +1,6 @@
 from .fetcher import (
     get_historical_prices,
+    get_historical_prices_fmp,
     filter_illiquid_tickers,
     clean_and_validate_data,
     get_benchmarks,
@@ -8,6 +9,7 @@ from .fetcher import (
 
 __all__ = [
     "get_historical_prices",
+    "get_historical_prices_fmp",
     "filter_illiquid_tickers",
     "clean_and_validate_data",
     "get_benchmarks",

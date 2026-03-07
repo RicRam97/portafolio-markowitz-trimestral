@@ -1,310 +1,319 @@
 import os
-import json
-import hashlib
-import time
-from pathlib import Path
-from datetime import datetime, timedelta
-import pandas as pd
-import numpy as np
-import yfinance as yf
 import logging
+from datetime import date, datetime, timedelta
+from typing import Optional
+
+import httpx
+import numpy as np
+import pandas as pd
+
+from config import (
+    FMP_API_KEY,
+    FMP_BASE_URL,
+    get_supabase_client,
+    log,
+)
 
 logger = logging.getLogger(__name__)
 
-CACHE_DIR = Path(".cache_yf_v2")
-CACHE_DIR.mkdir(exist_ok=True)
-CACHE_DURATION_HOURS = 4
 
 class DataFetchError(Exception):
-    def __init__(self, message, failed_tickers=None):
+    def __init__(self, message: str, failed_tickers: list[str] | None = None):
         super().__init__(message)
         self.failed_tickers = failed_tickers or []
 
-def _get_cache_path(tickers: list[str], period: str) -> Path:
-    """Generate a unique cache file path based on sorted tickers and period."""
-    hash_input = str(sorted(tickers)) + period
-    filename = hashlib.sha256(hash_input.encode('utf-8')).hexdigest() + ".json"
-    return CACHE_DIR / filename
 
-def _read_cache(cache_path: Path) -> dict | None:
-    """Read data from cache if it exists and is less than CACHE_DURATION_HOURS old."""
-    if not cache_path.exists():
-        logger.info(f"Cache miss (not found): {cache_path.name}")
-        return None
-        
+# ── Supabase cache helpers ──────────────────────────────────────
+
+
+def _read_cache_supabase(ticker: str, fecha_inicio: date, fecha_fin: date) -> pd.DataFrame | None:
+    """Lee datos cacheados de market_data_cache en Supabase.
+    Retorna un DataFrame con columnas [date, close] o None si no hay datos suficientes.
+    """
     try:
-        mtime = cache_path.stat().st_mtime
-        age_hours = (time.time() - mtime) / 3600
-        
-        if age_hours > CACHE_DURATION_HOURS:
-            logger.info(f"Cache miss (expired): {cache_path.name} (age: {age_hours:.1f}h)")
+        sb = get_supabase_client()
+        resp = (
+            sb.table("market_data_cache")
+            .select("fecha, close_price")
+            .eq("ticker", ticker)
+            .gte("fecha", fecha_inicio.isoformat())
+            .lte("fecha", fecha_fin.isoformat())
+            .order("fecha")
+            .execute()
+        )
+        rows = resp.data
+        if not rows:
             return None
-            
-        with open(cache_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            
-        logger.info(f"Cache hit: {cache_path.name}")
-        return data
+
+        df = pd.DataFrame(rows)
+        df.rename(columns={"fecha": "date", "close_price": "close"}, inplace=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df.set_index("date", inplace=True)
+        df["close"] = df["close"].astype(float)
+        return df
     except Exception as e:
-        logger.warning(f"Error reading cache {cache_path}: {e}")
+        logger.warning(f"Error leyendo cache Supabase para {ticker}: {e}")
         return None
 
-def _write_cache(cache_path: Path, data: dict):
-    """Write data to cache."""
+
+def _is_cache_fresh(cached_df: pd.DataFrame | None, fecha_fin: date) -> bool:
+    """Verifica si el cache cubre hasta al menos ayer (o fecha_fin si es pasado)."""
+    if cached_df is None or cached_df.empty:
+        return False
+    last_cached = cached_df.index.max().date()
+    # Consideramos fresco si cubre hasta ayer o hasta fecha_fin (lo que sea menor)
+    target = min(fecha_fin, date.today() - timedelta(days=1))
+    # Tolerancia de 3 dias por fines de semana / festivos
+    return (target - last_cached).days <= 3
+
+
+def _upsert_cache_supabase(ticker: str, df: pd.DataFrame) -> None:
+    """Guarda/actualiza datos en market_data_cache."""
     try:
-        with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump(data, f)
+        sb = get_supabase_client()
+        records = []
+        for idx, row in df.iterrows():
+            records.append({
+                "ticker": ticker,
+                "fecha": idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx),
+                "close_price": float(row["close"]),
+            })
+
+        if not records:
+            return
+
+        # Upsert en lotes de 500
+        batch_size = 500
+        for i in range(0, len(records), batch_size):
+            batch = records[i : i + batch_size]
+            sb.table("market_data_cache").upsert(batch, on_conflict="ticker,fecha").execute()
+
+        logger.info(f"Cache actualizado para {ticker}: {len(records)} registros.")
     except Exception as e:
-        logger.warning(f"Error writing to cache {cache_path}: {e}")
+        logger.warning(f"Error escribiendo cache Supabase para {ticker}: {e}")
 
-def get_historical_prices(tickers: list[str], period: str) -> dict:
+
+# ── FMP API helpers ─────────────────────────────────────────────
+
+
+def _fetch_fmp_historical(ticker: str, fecha_inicio: date, fecha_fin: date) -> pd.DataFrame:
+    """Descarga precios historicos desde Financial Modeling Prep.
+    Retorna DataFrame con index=date, columna 'close'.
+    Lanza DataFetchError si el ticker no existe o FMP falla.
     """
-    Downloads historical prices for given tickers and period.
-    Period must be one of: "1y", "3y", "5y".
-    Returns cleaned data and failed tickers.
-    """
-    allowed_periods = {"1y", "3y", "5y"}
-    if period not in allowed_periods:
-        raise ValueError(f"Period '{period}' not supported. Use one of {allowed_periods}")
+    if not FMP_API_KEY:
+        raise DataFetchError("FMP_API_KEY no esta configurada. Agrega FMP_API_KEY al .env")
 
-    if not tickers:
-        raise DataFetchError("No tickers provided.")
-
-    cache_path = _get_cache_path(tickers, period)
-    cached_data = _read_cache(cache_path)
-    
-    if cached_data:
-        # Convert prices back to DataFrame
-        if "prices" in cached_data and cached_data["prices"]:
-            cached_data["prices"] = pd.DataFrame.from_dict(cached_data["prices"])
-            cached_data["prices"].index = pd.to_datetime(cached_data["prices"].index)
-        if "returns" in cached_data and cached_data["returns"]:
-            cached_data["returns"] = pd.DataFrame.from_dict(cached_data["returns"])
-            cached_data["returns"].index = pd.to_datetime(cached_data["returns"].index)
-        return cached_data
-
-    logger.info(f"Downloading {len(tickers)} tickers for period {period}")
-    failed_tickers = []
-    
-    try:
-        raw_data = yf.download(tickers, period=period, group_by="ticker", auto_adjust=False, threads=True)
-    except Exception as e:
-        raise DataFetchError(f"API yfinance error: {e}")
-
-    if raw_data.empty:
-        raise DataFetchError("No data downloaded from yfinance.", failed_tickers=tickers)
-
-    prices_df = pd.DataFrame()
-    
-    if len(tickers) == 1:
-        ticker = tickers[0]
-        # In single ticker, yfinance sometimes drops the top level MultiIndex
-        if isinstance(raw_data.columns, pd.MultiIndex):
-            t_data = raw_data[ticker]
-            if "Adj Close" in t_data.columns and not t_data["Adj Close"].dropna().empty:
-                prices_df[ticker] = t_data["Adj Close"].dropna()
-            else:
-                failed_tickers.append(ticker)
-        else:
-            if "Adj Close" in raw_data.columns and not raw_data["Adj Close"].dropna().empty:
-                prices_df[ticker] = raw_data["Adj Close"].dropna()
-            else:
-                failed_tickers.append(ticker)
-    else:
-        for ticker in tickers:
-            if isinstance(raw_data.columns, pd.MultiIndex) and ticker in raw_data.columns.levels[0]:
-                t_data = raw_data[ticker]
-                if "Adj Close" in t_data.columns and not t_data["Adj Close"].dropna().empty:
-                    prices_df[ticker] = t_data["Adj Close"].dropna()
-                else:
-                    failed_tickers.append(ticker)
-            elif not isinstance(raw_data.columns, pd.MultiIndex) and "Adj Close" in raw_data.columns:
-                # Should not happen for multiple tickers unless yf changes API
-                prices_df[ticker] = raw_data["Adj Close"]
-            else:
-                failed_tickers.append(ticker)
-
-    if len(failed_tickers) == len(tickers):
-        raise DataFetchError("No data found for any of the requested tickers.", failed_tickers=failed_tickers)
-    
-    # Process and Clean
-    cleaned_prices, log_returns = clean_and_validate_data(prices_df)
-    
-    # Prepare result - convert to dicts with string keys for JSON serialization
-    result = {
-        "prices": {k: {timestamp.strftime("%Y-%m-%d"): v for timestamp, v in it.items()} for k, it in cleaned_prices.to_dict().items()},
-        "returns": {k: {timestamp.strftime("%Y-%m-%d"): v for timestamp, v in it.items()} for k, it in log_returns.to_dict().items()},
-        "tickers": list(cleaned_prices.columns),
-        "period": period,
-        "failed_tickers": failed_tickers
+    url = f"{FMP_BASE_URL}/historical-price-full/{ticker}"
+    params = {
+        "from": fecha_inicio.isoformat(),
+        "to": fecha_fin.isoformat(),
+        "apikey": FMP_API_KEY,
     }
-    
-    _write_cache(cache_path, result)
-    
-    # Return with DataFrames for local python usage
+
+    with httpx.Client(timeout=30.0) as client:
+        resp = client.get(url, params=params)
+
+    if resp.status_code == 404:
+        raise DataFetchError(
+            f"Ticker '{ticker}' no encontrado en FMP (HTTP 404).",
+            failed_tickers=[ticker],
+        )
+
+    if resp.status_code != 200:
+        raise DataFetchError(
+            f"Error de FMP para '{ticker}': HTTP {resp.status_code}",
+            failed_tickers=[ticker],
+        )
+
+    data = resp.json()
+    historical = data.get("historical", [])
+
+    if not historical:
+        raise DataFetchError(
+            f"FMP retorno un array vacio para '{ticker}'. Verifica que el simbolo sea valido.",
+            failed_tickers=[ticker],
+        )
+
+    df = pd.DataFrame(historical)
+    df["date"] = pd.to_datetime(df["date"])
+    df.set_index("date", inplace=True)
+    df.sort_index(inplace=True)
+    df = df[["close"]].copy()
+    df["close"] = df["close"].astype(float)
+    return df
+
+
+# ── Public API ──────────────────────────────────────────────────
+
+
+def get_historical_prices_fmp(
+    tickers: list[str],
+    fecha_inicio: date,
+    fecha_fin: date,
+) -> dict:
+    """Descarga precios historicos usando el patron Cache-Aside con FMP + Supabase.
+
+    Retorna:
+        {
+            "prices": pd.DataFrame (index=date, columnas=tickers),
+            "returns": pd.DataFrame (log-returns),
+            "tickers": list[str],
+            "failed_tickers": list[str],
+        }
+    """
+    if not tickers:
+        raise DataFetchError("No se proporcionaron tickers.")
+
+    prices_dict: dict[str, pd.Series] = {}
+    failed_tickers: list[str] = []
+
+    for ticker in tickers:
+        try:
+            # 1. Intentar cache
+            cached = _read_cache_supabase(ticker, fecha_inicio, fecha_fin)
+
+            if _is_cache_fresh(cached, fecha_fin):
+                logger.info(f"Cache HIT para {ticker}")
+                prices_dict[ticker] = cached["close"]
+                continue
+
+            # 2. Cache miss o desactualizado — pedir a FMP
+            logger.info(f"Cache MISS para {ticker}, descargando de FMP...")
+            fmp_df = _fetch_fmp_historical(ticker, fecha_inicio, fecha_fin)
+
+            # 3. Guardar en cache
+            _upsert_cache_supabase(ticker, fmp_df)
+
+            prices_dict[ticker] = fmp_df["close"]
+
+        except DataFetchError:
+            failed_tickers.append(ticker)
+            logger.warning(f"Ticker fallido: {ticker}")
+        except Exception as e:
+            failed_tickers.append(ticker)
+            logger.error(f"Error inesperado para {ticker}: {e}")
+
+    if not prices_dict:
+        raise DataFetchError(
+            "No se encontraron datos para ninguno de los tickers solicitados.",
+            failed_tickers=failed_tickers,
+        )
+
+    # Construir DataFrame de precios alineados
+    prices_df = pd.DataFrame(prices_dict)
+    prices_df.sort_index(inplace=True)
+
+    # Limpieza y validacion
+    cleaned_prices, log_returns = clean_and_validate_data(prices_df)
+
     return {
         "prices": cleaned_prices,
         "returns": log_returns,
         "tickers": list(cleaned_prices.columns),
-        "period": period,
-        "failed_tickers": failed_tickers
+        "failed_tickers": failed_tickers,
     }
 
-def filter_illiquid_tickers(tickers: list[str], min_volume: float = 1_000_000) -> dict:
-    """
-    Downloads last 30 days of data and filters out tickers with average daily volume
-    (Price * Volume) below min_volume. Targeted at BMV (.MX).
-    Returns {"valid_tickers": [], "rejected_tickers": {"ticker": "reason"}}
-    """
-    if not tickers:
-        return {"valid_tickers": [], "rejected_tickers": {}}
-        
-    try:
-        data = yf.download(tickers, period="1mo", group_by="ticker", auto_adjust=False, threads=True)
-    except Exception as e:
-        logger.warning(f"Error downloading for liquidity check: {e}")
-        return {"valid_tickers": tickers, "rejected_tickers": {}} 
 
-    valid_tickers = []
-    rejected_tickers = {}
+# ── Legacy wrappers (mantienen compatibilidad con api.py existente) ──
 
-    if len(tickers) == 1:
-        ticker = tickers[0]
-        if data.empty:
-            rejected_tickers[ticker] = "No data returned"
-        else:
-            if isinstance(data.columns, pd.MultiIndex):
-                t_data = data[ticker]
-            else:
-                t_data = data
-                
-            if "Volume" not in t_data.columns or "Close" not in t_data.columns:
-                rejected_tickers[ticker] = "No volume/close data"
-            else:
-                adv = (t_data["Volume"] * t_data["Close"]).mean()
-                if adv < min_volume or np.isnan(adv):
-                    rejected_tickers[ticker] = f"ADV ${adv:,.2f} < ${min_volume:,.2f}"
-                else:
-                    valid_tickers.append(ticker)
-    else:
-        for ticker in tickers:
-            if isinstance(data.columns, pd.MultiIndex):
-                if ticker not in data.columns.levels[0]:
-                    rejected_tickers[ticker] = "No data returned"
-                    continue
-                t_data = data[ticker]
-            else:
-                t_data = data
-                
-            if "Volume" not in t_data.columns or "Close" not in t_data.columns:
-                rejected_tickers[ticker] = "No volume/close data"
-                continue
-                
-            adv = (t_data["Volume"] * t_data["Close"]).mean()
-            if adv < min_volume or pd.isna(adv):
-                rejected_tickers[ticker] = f"ADV ${adv:,.2f} < ${min_volume:,.2f}" if not pd.isna(adv) else "ADV is NaN"
-            else:
-                valid_tickers.append(ticker)
 
-    return {
-        "valid_tickers": valid_tickers,
-        "rejected_tickers": rejected_tickers
-    }
+def get_historical_prices(tickers: list[str], period: str) -> dict:
+    """Wrapper que traduce el formato period ('1y','3y','5y') a fechas y llama a FMP."""
+    period_map = {"1y": 1, "3y": 3, "5y": 5}
+    years = period_map.get(period)
+    if years is None:
+        raise ValueError(f"Period '{period}' no soportado. Usa uno de {set(period_map.keys())}")
 
-def clean_and_validate_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """
-    Cleans and validates price data:
-    1. Forward fill NaN (max 5 days)
-    2. Align dates: inner join of dates
-    3. Validate minimum 252 days
-    4. Detect outliers (diff > 50%)
-    5. Calculate log returns
-    """
-    
-    # 1. Forward fill (max 5 days)
-    df = df.ffill(limit=5)
-    
-    # 2. Align dates and inner join (drop rows where any ticker has NA)
-    df = df.dropna(how='any')
-    
-    # 3. Validate min 252 days
-    if len(df) < 252:
-        raise DataFetchError(f"Insufficient data: only {len(df)} days available, minimum 252 required.")
-        
-    # 4. Detect outliers
-    pct_change = df.pct_change()
-    outlier_mask = (pct_change > 0.5) | (pct_change < -0.5)
-    if outlier_mask.any().any():
-        outliers = outlier_mask.sum()
-        for col in outliers[outliers > 0].index:
-            logger.warning(f"Outlier detected for {col}: {outliers[col]} days with >50% variation.")
-            
-    # 5. Calculate logarithmic returns
-    # shift(1) is previous day, log(price/prev_price)
-    log_returns = np.log(df / df.shift(1)).dropna(how='all')
-    
-    # log returns still might have NA in the first row due to shift, drop them and align prices
-    df = df.loc[log_returns.index]
-    
-    return df, log_returns
+    fecha_fin = date.today()
+    fecha_inicio = date(fecha_fin.year - years, fecha_fin.month, fecha_fin.day)
+
+    return get_historical_prices_fmp(tickers, fecha_inicio, fecha_fin)
+
 
 def get_benchmarks(period: str) -> dict:
-    """
-    Downloads ^MXX and ^GSPC for the period.
-    Also returns CETES growth (hardcoded using CETES_RATE env var).
-    Returns the growth of $10,000 in each benchmark.
-    """
+    """Descarga benchmarks (IPC y S&P500) usando FMP y calcula el crecimiento de $10,000."""
     INITIAL_AMOUNT = 10000.0
-    
-    # Fetch CETES rate
-    cetes_rate_str = os.environ.get("CETES_RATE", "0.105") # 10.5% default
+
+    cetes_rate_str = os.environ.get("CETES_RATE", "0.105")
     try:
         cetes_rate = float(cetes_rate_str)
     except ValueError:
         cetes_rate = 0.105
-        
-    # Translate period to years
-    if period == "1y": years = 1
-    elif period == "3y": years = 3
-    elif period == "5y": years = 5
-    else: years = 1
-        
+
+    period_map = {"1y": 1, "3y": 3, "5y": 5}
+    years = period_map.get(period, 1)
     cetes_final = INITIAL_AMOUNT * ((1 + cetes_rate) ** years)
-    
-    benchmarks = {"^MXX": "IPC", "^GSPC": "S&P500"}
-    bm_results = {}
-    
-    try:
-        data = yf.download(list(benchmarks.keys()), period=period, group_by="ticker", auto_adjust=False, threads=True)
-        for ticker, name in benchmarks.items():
-            if len(benchmarks) == 1:
-                t_data = data
-            elif isinstance(data.columns, pd.MultiIndex):
-                if ticker in data.columns.levels[0]:
-                    t_data = data[ticker]
-                else:
-                    t_data = pd.DataFrame()
-            else:
-                t_data = data
-                
-            if "Adj Close" in t_data.columns and not t_data["Adj Close"].dropna().empty:
-                prices = t_data["Adj Close"].dropna()
-                first_price = prices.iloc[0]
-                last_price = prices.iloc[-1]
-                growth = (last_price / first_price)
+
+    fecha_fin = date.today()
+    fecha_inicio = date(fecha_fin.year - years, fecha_fin.month, fecha_fin.day)
+
+    benchmarks_map = {"^MXX": "IPC", "^GSPC": "S&P500"}
+    # FMP usa formatos distintos para indices
+    fmp_ticker_map = {"^MXX": "%5EMXX", "^GSPC": "%5EGSPC"}
+    bm_results: dict[str, float | None] = {}
+
+    for original_ticker, name in benchmarks_map.items():
+        try:
+            fmp_ticker = fmp_ticker_map.get(original_ticker, original_ticker)
+            fmp_df = _fetch_fmp_historical(fmp_ticker, fecha_inicio, fecha_fin)
+            if not fmp_df.empty:
+                first_price = fmp_df["close"].iloc[0]
+                last_price = fmp_df["close"].iloc[-1]
+                growth = last_price / first_price
                 bm_results[name] = INITIAL_AMOUNT * growth
             else:
                 bm_results[name] = None
-    except Exception as e:
-        logger.warning(f"Error fetching benchmarks: {e}")
-        bm_results["IPC"] = None
-        bm_results["S&P500"] = None
-        
+        except Exception as e:
+            logger.warning(f"Error descargando benchmark {name}: {e}")
+            bm_results[name] = None
+
     return {
         "IPC_final": bm_results.get("IPC"),
         "S&P500_final": bm_results.get("S&P500"),
         "CETES_final": cetes_final,
         "initial_amount": INITIAL_AMOUNT,
         "period": period,
-        "cetes_rate_used": cetes_rate
+        "cetes_rate_used": cetes_rate,
     }
+
+
+def filter_illiquid_tickers(tickers: list[str], min_volume: float = 1_000_000) -> dict:
+    """Placeholder — la API de FMP no provee volumen en el endpoint historico gratuito.
+    Retorna todos los tickers como validos por ahora."""
+    return {"valid_tickers": tickers, "rejected_tickers": {}}
+
+
+def clean_and_validate_data(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Limpia y valida datos de precios:
+    1. Forward fill NaN (max 5 dias)
+    2. Alinear fechas (inner join)
+    3. Validar minimo 126 dias (~6 meses)
+    4. Detectar outliers (cambio > 50%)
+    5. Calcular retornos logaritmicos
+    """
+    # 1. Forward fill
+    df = df.ffill(limit=5)
+
+    # 2. Alinear fechas
+    df = df.dropna(how="any")
+
+    # 3. Validar minimo 6 meses
+    if len(df) < 126:
+        raise DataFetchError(
+            f"Datos insuficientes: solo {len(df)} dias disponibles, minimo 126 requeridos (~6 meses)."
+        )
+
+    # 4. Detectar outliers
+    pct_change = df.pct_change()
+    outlier_mask = (pct_change > 0.5) | (pct_change < -0.5)
+    if outlier_mask.any().any():
+        outliers = outlier_mask.sum()
+        for col in outliers[outliers > 0].index:
+            logger.warning(f"Outlier detectado en {col}: {outliers[col]} dias con > 50% de variacion.")
+
+    # 5. Retornos logaritmicos
+    log_returns = np.log(df / df.shift(1)).dropna(how="all")
+    df = df.loc[log_returns.index]
+
+    return df, log_returns

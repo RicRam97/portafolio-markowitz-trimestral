@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.optimize import minimize
 from pypfopt import expected_returns, risk_models
 from pypfopt.efficient_frontier import EfficientFrontier
 from pypfopt.hierarchical_portfolio import HRPOpt
@@ -54,11 +55,10 @@ def sanity_filters(returns_df: pd.DataFrame) -> dict:
         flags["insufficient_data"] = True
         flags["messages"].append(f"Solo {len(returns_df)} días de historia (ideal > 252).")
         
-    # Calculate geometric mean return annualized correctly
-    # Log returns to simple returns, then annualized
-    cum_returns = np.exp(returns_df.sum()) - 1
+    # Calculate geometric mean return annualized correctly (simple returns from pct_change)
+    cum_returns = (1 + returns_df).prod() - 1
     years = len(returns_df) / 252
-    ann_returns = (1 + cum_returns) ** (1 / years) - 1 if years > 0 else np.zeros_like(cum_returns)
+    ann_returns = (1 + cum_returns) ** (1 / years) - 1 if years > 0 else cum_returns * 0.0
     ann_vols = returns_df.std() * np.sqrt(252)
     
     tickers_to_keep = []
@@ -99,41 +99,52 @@ def optimize_markowitz(returns_df: pd.DataFrame, constraints: dict) -> dict:
     max_w = constraints.get("max_weight", 0.25)
     target_vol = constraints.get("max_volatility")
     target_ret = constraints.get("min_return")
-    
-    # Use exponential moving average for returns to give more weight to recent data, 
-    # but classic mean historical is robust. 
+    rf = constraints.get("risk_free_rate", 0.04)
+
     mu = expected_returns.mean_historical_return(returns_df, returns_data=True, frequency=252)
     cov = risk_models.CovarianceShrinkage(returns_df, returns_data=True).ledoit_wolf()
-    
+
     safe_max_weight = max(max_w, 1.0 / len(mu) + 0.05) if len(mu) > 0 else max_w
-    
+
     ef = EfficientFrontier(mu, cov, weight_bounds=(0, safe_max_weight))
-    
-    # Optimization logic based on constraints
+
     try:
         if target_ret is not None and target_vol is not None:
-             # Try to hit target return, if it hits volatility limits we might fail.
-             # Alternatively we maximize sharpe. Let's do max_sharpe as primary if both are none,
-             # if target_ret is set we use efficient_return, if target_vol is set we use efficient_risk
-             
-             # if both are set, we try to minimize risk for target return, then verify if vol <= target_vol
-             ef.efficient_return(target_ret)
+            # Minimize risk for target return, then verify volatility constraint
+            ef.efficient_return(target_ret)
+            _, vol_check, _ = ef.portfolio_performance(verbose=False, risk_free_rate=rf)
+            if vol_check > target_vol:
+                logger.warning(
+                    f"Volatilidad resultante ({vol_check:.4f}) excede límite ({target_vol:.4f}), "
+                    "reoptimizando con efficient_risk."
+                )
+                ef = EfficientFrontier(mu, cov, weight_bounds=(0, safe_max_weight))
+                ef.efficient_risk(target_vol)
         elif target_ret is not None:
-             ef.efficient_return(target_ret)
+            ef.efficient_return(target_ret)
         elif target_vol is not None:
-             ef.efficient_risk(target_vol)
+            ef.efficient_risk(target_vol)
         else:
-             ef.max_sharpe(risk_free_rate=0.0)
+            try:
+                ef.max_sharpe(risk_free_rate=rf)
+            except ValueError:
+                logger.warning("max_sharpe falló (retornos < rf), usando min_volatility.")
+                ef = EfficientFrontier(mu, cov, weight_bounds=(0, safe_max_weight))
+                ef.min_volatility()
     except Exception as e:
         logger.warning(f"Falla optimización con restricciones específicas, cayendo a max_sharpe: {e}")
-        # Reset and fallback to max_sharpe
         ef = EfficientFrontier(mu, cov, weight_bounds=(0, safe_max_weight))
-        ef.max_sharpe(risk_free_rate=0.0)
+        try:
+            ef.max_sharpe(risk_free_rate=rf)
+        except ValueError:
+            logger.warning("max_sharpe falló (retornos < rf), usando min_volatility.")
+            ef = EfficientFrontier(mu, cov, weight_bounds=(0, safe_max_weight))
+            ef.min_volatility()
 
     raw_weights = ef.clean_weights()
     w_series = pd.Series(raw_weights)
     
-    ret_opt, vol_opt, sharpe_opt = ef.portfolio_performance(verbose=False, risk_free_rate=0.0)
+    ret_opt, vol_opt, sharpe_opt = ef.portfolio_performance(verbose=False, risk_free_rate=rf)
     
     # Calculate Max Drawdown Estimation (historical based on daily returns dot weights)
     port_rets = returns_df.dot(w_series)
@@ -172,11 +183,15 @@ def optimize_hrp(returns_df: pd.DataFrame, max_weight: float = 0.25) -> dict:
         w_series = pd.Series(cleaned_weights)
         
         if w_series.max() > max_weight:
-            # Simple heuristic clipping and redistribution
             w_series = w_series.clip(upper=max_weight)
             w_series = w_series / w_series.sum()
-        
-        ret_hrp, vol_hrp, sharpe_hrp = hrp.portfolio_performance(risk_free_rate=0.0)
+
+        # Recalculate performance from actual (possibly clipped) weights
+        mu = expected_returns.mean_historical_return(returns_df, returns_data=True, frequency=252)
+        cov = risk_models.CovarianceShrinkage(returns_df, returns_data=True).ledoit_wolf()
+        ret_hrp = float(w_series.dot(mu))
+        vol_hrp = float(np.sqrt(w_series.dot(cov).dot(w_series)))
+        sharpe_hrp = ret_hrp / vol_hrp if vol_hrp > 0 else 0.0
         
         # Extract clusters for dendrogram
         linkage_matrix = None
@@ -212,7 +227,7 @@ def run_monte_carlo(returns_df: pd.DataFrame, n_portfolios: int = 5000) -> dict:
     
     rets = weights @ mu_np
     vols = np.sqrt((weights * (weights @ cov_np)).sum(axis=1))
-    sharpes = rets / vols
+    sharpes = np.where(vols > 0, rets / vols, 0.0)
     
     # Identify key portfolios
     max_sharpe_idx = np.argmax(sharpes)
@@ -280,3 +295,150 @@ def calculate_positions(weights: dict, budget: float, last_prices: pd.Series) ->
         "remaining_cash": round(remaining_cash, 2),
         "total_budget": budget
     }
+
+
+class MarkowitzOptimizer:
+    """Optimizador Markowitz puro usando scipy (sin pypfopt).
+    Recibe retornos logaritmicos y parametros de restriccion.
+    """
+
+    def __init__(
+        self,
+        log_returns: pd.DataFrame,
+        tasa_libre_riesgo: float = 0.04,
+        peso_maximo: float = 0.25,
+        volatilidad_maxima: float | None = None,
+    ):
+        self.log_returns = log_returns
+        self.tickers = list(log_returns.columns)
+        self.n = len(self.tickers)
+        self.rf = tasa_libre_riesgo
+        self.peso_maximo = peso_maximo
+        self.volatilidad_maxima = volatilidad_maxima
+
+        # Retorno esperado anualizado (media geometrica de log-returns)
+        self.mu = log_returns.mean() * 252
+        # Matriz de covarianza anualizada
+        self.cov = log_returns.cov() * 252
+
+    def _portfolio_return(self, w: np.ndarray) -> float:
+        return float(w @ self.mu.values)
+
+    def _portfolio_volatility(self, w: np.ndarray) -> float:
+        return float(np.sqrt(w @ self.cov.values @ w))
+
+    def _neg_sharpe(self, w: np.ndarray) -> float:
+        ret = self._portfolio_return(w)
+        vol = self._portfolio_volatility(w)
+        if vol < 1e-10:
+            return 1e10
+        return -(ret - self.rf) / vol
+
+    def optimize(self) -> dict:
+        """Encuentra el portafolio con maximo Sharpe Ratio.
+        Si hay restriccion de volatilidad maxima, maximiza retorno sujeto a vol <= max.
+        """
+        w0 = np.ones(self.n) / self.n
+        bounds = [(0.0, self.peso_maximo) for _ in range(self.n)]
+        constraints = [{"type": "eq", "fun": lambda w: np.sum(w) - 1.0}]
+
+        if self.volatilidad_maxima is not None:
+            # Maximizar retorno sujeto a vol <= max
+            constraints.append({
+                "type": "ineq",
+                "fun": lambda w: self.volatilidad_maxima - self._portfolio_volatility(w),
+            })
+            objective = lambda w: -self._portfolio_return(w)
+        else:
+            objective = self._neg_sharpe
+
+        result = minimize(
+            objective,
+            w0,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints,
+            options={"maxiter": 1000, "ftol": 1e-12},
+        )
+
+        if not result.success:
+            raise OptimizerError(f"La optimizacion no convergio: {result.message}")
+
+        w_opt = result.x
+        # Limpiar pesos cercanos a cero
+        w_opt[w_opt < 1e-4] = 0.0
+        w_opt = w_opt / w_opt.sum()
+
+        ret_opt = self._portfolio_return(w_opt)
+        vol_opt = self._portfolio_volatility(w_opt)
+        sharpe_opt = (ret_opt - self.rf) / vol_opt if vol_opt > 1e-10 else 0.0
+
+        weights = {self.tickers[i]: round(float(w_opt[i]), 6) for i in range(self.n) if w_opt[i] > 1e-6}
+
+        return {
+            "weights": weights,
+            "expected_return": round(ret_opt, 6),
+            "volatility": round(vol_opt, 6),
+            "sharpe_ratio": round(sharpe_opt, 4),
+        }
+
+    def efficient_frontier(self, n_points: int = 50) -> list[dict]:
+        """Genera n_points puntos de la frontera eficiente
+        variando el retorno objetivo entre el minimo y maximo alcanzable.
+        """
+        # Encontrar portafolio de minima varianza
+        w0 = np.ones(self.n) / self.n
+        bounds = [(0.0, self.peso_maximo) for _ in range(self.n)]
+        constraints_base = [{"type": "eq", "fun": lambda w: np.sum(w) - 1.0}]
+
+        res_min = minimize(
+            self._portfolio_volatility,
+            w0,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints_base,
+            options={"maxiter": 1000},
+        )
+        min_ret = self._portfolio_return(res_min.x) if res_min.success else float(self.mu.min())
+
+        # Encontrar portafolio de maximo retorno
+        res_max = minimize(
+            lambda w: -self._portfolio_return(w),
+            w0,
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints_base,
+            options={"maxiter": 1000},
+        )
+        max_ret = self._portfolio_return(res_max.x) if res_max.success else float(self.mu.max())
+
+        if max_ret <= min_ret:
+            max_ret = min_ret + 0.01
+
+        target_returns = np.linspace(min_ret, max_ret, n_points)
+        frontier_points: list[dict] = []
+
+        for target_ret in target_returns:
+            cons = [
+                {"type": "eq", "fun": lambda w: np.sum(w) - 1.0},
+                {"type": "eq", "fun": lambda w, tr=target_ret: self._portfolio_return(w) - tr},
+            ]
+            res = minimize(
+                self._portfolio_volatility,
+                w0,
+                method="SLSQP",
+                bounds=bounds,
+                constraints=cons,
+                options={"maxiter": 1000},
+            )
+            if res.success:
+                vol = self._portfolio_volatility(res.x)
+                ret = self._portfolio_return(res.x)
+                sharpe = (ret - self.rf) / vol if vol > 1e-10 else 0.0
+                frontier_points.append({
+                    "expected_return": round(ret, 6),
+                    "volatility": round(vol, 6),
+                    "sharpe_ratio": round(sharpe, 4),
+                })
+
+        return frontier_points

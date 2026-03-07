@@ -22,6 +22,18 @@ SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
 SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 CRON_SECRET = os.getenv("CRON_SECRET", "dev_cron_secret_123")
 
+# -- FMP (Financial Modeling Prep) ────────────────────────
+FMP_API_KEY = os.getenv("FMP_API_KEY", "")
+FMP_BASE_URL = "https://financialmodelingprep.com/api/v3"
+
+
+def get_supabase_client():
+    """Retorna un cliente Supabase con service_role para operaciones del backend."""
+    from supabase import create_client
+    if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
+        raise RuntimeError("SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY deben estar configuradas.")
+    return create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
 # ── CORS ─────────────────────────────────────────────────────
 _cors_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:5174,https://kaudal.com.mx,https://www.kaudal.com.mx")
 CORS_ORIGINS: list[str] = [o.strip() for o in _cors_raw.split(",") if o.strip()]

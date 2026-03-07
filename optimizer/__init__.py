@@ -5,6 +5,7 @@ from .core import (
     sanity_filters,
     calculate_positions,
     smart_beta_filter,
+    MarkowitzOptimizer,
     OptimizerError
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "sanity_filters",
     "calculate_positions",
     "smart_beta_filter",
+    "MarkowitzOptimizer",
     "OptimizerError"
 ]
