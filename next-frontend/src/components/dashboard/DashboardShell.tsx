@@ -152,8 +152,16 @@ export default function DashboardShell({ nombre, email, children }: Props) {
 
             {/* Mobile menu overlay */}
             {mobileMenuOpen && (
-                <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileMenuOpen(false)}>
+                <div
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Cerrar menú"
+                    className="fixed inset-0 bg-black/50 z-40 md:hidden"
+                    onClick={() => setMobileMenuOpen(false)}
+                    onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') setMobileMenuOpen(false); }}
+                >
                     <div
+                        role="presentation"
                         className="absolute top-0 right-0 w-[240px] h-full p-4 flex flex-col gap-2"
                         style={{ background: 'rgba(11,17,32,0.99)', borderLeft: '1px solid var(--border-light)' }}
                         onClick={(e) => e.stopPropagation()}

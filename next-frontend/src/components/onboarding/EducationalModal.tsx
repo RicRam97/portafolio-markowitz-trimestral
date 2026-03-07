@@ -131,6 +131,7 @@ export default function EducationalModal({
                         {/* Continue button */}
                         <motion.button
                             onClick={onContinue}
+                            /* eslint-disable-next-line jsx-a11y/no-autofocus */
                             autoFocus
                             style={{
                                 width: '100%',

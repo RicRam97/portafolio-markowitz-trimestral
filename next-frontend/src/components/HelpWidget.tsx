@@ -135,6 +135,7 @@ export default function HelpWidget() {
                     placeholder="Buscar en preguntas frecuentes..."
                     className="flex-1 bg-transparent text-sm outline-none placeholder:opacity-60"
                     style={{ color: 'var(--text-main)' }}
+                    /* eslint-disable-next-line jsx-a11y/no-autofocus */
                     autoFocus
                   />
                   {query && (

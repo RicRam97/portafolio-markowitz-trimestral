@@ -148,9 +148,9 @@ export default function TestSuenosPage() {
 
         {/* Meta tipo */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             ¿Para qué quieres invertir?
-          </label>
+          </span>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
             {META_OPTIONS.map((opt) => {
               const selected = form.meta_tipo === opt.value;
@@ -181,9 +181,9 @@ export default function TestSuenosPage() {
 
         {/* Moneda toggle */}
         <div style={{ marginBottom: '24px' }}>
-          <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <span style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Moneda
-          </label>
+          </span>
           <div style={{ display: 'flex', gap: '8px' }}>
             {(['MXN', 'USD'] as Moneda[]).map((cur) => (
               <button

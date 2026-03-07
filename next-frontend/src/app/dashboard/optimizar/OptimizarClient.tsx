@@ -227,9 +227,9 @@ export default function OptimizarClient() {
                     {/* Tickers */}
                     <div className="flex-1">
                         <div className="flex items-center justify-between mb-2">
-                            <label className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
                                 Universo (Tickers)
-                            </label>
+                            </span>
                             <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
                                 style={{ background: 'rgba(37,99,235,0.1)', color: 'var(--accent-primary)', border: '1px solid rgba(37,99,235,0.2)' }}>
                                 {tickers.length} seleccionados

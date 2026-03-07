@@ -49,9 +49,9 @@ export default function ModelSelector({ value, onChange, userPlan, disabled }: M
 
     return (
         <div>
-            <label className="text-xs font-bold uppercase tracking-widest mb-2 block" style={{ color: 'var(--text-muted)' }}>
+            <span className="text-xs font-bold uppercase tracking-widest mb-2 block" style={{ color: 'var(--text-muted)' }}>
                 Modelo de Optimizacion
-            </label>
+            </span>
             <div className="flex flex-col gap-2">
                 {MODELS.map((model) => {
                     const locked = TIER_RANK[model.minTier] > userRank;
