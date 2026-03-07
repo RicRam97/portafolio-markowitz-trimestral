@@ -24,7 +24,7 @@ CRON_SECRET = os.getenv("CRON_SECRET", "dev_cron_secret_123")
 
 # -- FMP (Financial Modeling Prep) ────────────────────────
 FMP_API_KEY = os.getenv("FMP_API_KEY", "")
-FMP_BASE_URL = "https://financialmodelingprep.com/api/v3"
+FMP_BASE_URL = "https://financialmodelingprep.com/stable"
 
 
 def get_supabase_client():

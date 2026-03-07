@@ -97,15 +97,16 @@ def _upsert_cache_supabase(ticker: str, df: pd.DataFrame) -> None:
 
 
 def _fetch_fmp_historical(ticker: str, fecha_inicio: date, fecha_fin: date) -> pd.DataFrame:
-    """Descarga precios historicos desde Financial Modeling Prep.
+    """Descarga precios historicos desde Financial Modeling Prep (stable API).
     Retorna DataFrame con index=date, columna 'close'.
     Lanza DataFetchError si el ticker no existe o FMP falla.
     """
     if not FMP_API_KEY:
         raise DataFetchError("FMP_API_KEY no esta configurada. Agrega FMP_API_KEY al .env")
 
-    url = f"{FMP_BASE_URL}/historical-price-full/{ticker}"
+    url = f"{FMP_BASE_URL}/historical-price-eod/full"
     params = {
+        "symbol": ticker,
         "from": fecha_inicio.isoformat(),
         "to": fecha_fin.isoformat(),
         "apikey": FMP_API_KEY,
@@ -127,15 +128,15 @@ def _fetch_fmp_historical(ticker: str, fecha_inicio: date, fecha_fin: date) -> p
         )
 
     data = resp.json()
-    historical = data.get("historical", [])
 
-    if not historical:
+    # Stable API returns a flat array of records
+    if not data:
         raise DataFetchError(
             f"FMP retorno un array vacio para '{ticker}'. Verifica que el simbolo sea valido.",
             failed_tickers=[ticker],
         )
 
-    df = pd.DataFrame(historical)
+    df = pd.DataFrame(data)
     df["date"] = pd.to_datetime(df["date"])
     df.set_index("date", inplace=True)
     df.sort_index(inplace=True)
