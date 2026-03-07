@@ -65,7 +65,7 @@ export default function DashboardUI({ nombre, email, testCompletado, children }:
                 <nav className="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
                     {navItems.map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                        const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname === item.href || pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
                                 key={item.href}
@@ -152,7 +152,7 @@ export default function DashboardUI({ nombre, email, testCompletado, children }:
                 <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-between px-2 py-2 bg-[rgba(11,17,32,0.98)] border-t border-[#1e293b] backdrop-blur-md pb-safe">
                     {navItems.slice(0, 5).map((item) => {
                         const Icon = item.icon;
-                        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                        const isActive = item.href === '/dashboard' ? pathname === '/dashboard' : pathname === item.href || pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
                                 key={item.href}
