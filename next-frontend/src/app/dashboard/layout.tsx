@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     // Fetch user profile for greeting and test completion status
     const { data: profile } = await supabase
         .from('profiles')
-        .select('nombre, test_completado, plan, onboarding_completado')
+        .select('nombre, plan, onboarding_completado')
         .eq('id', user.id)
         .single();
 
@@ -19,7 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     if (!profile?.onboarding_completado) redirect('/onboarding');
 
     const nombre = profile?.nombre || user.email?.split('@')[0] || 'Usuario';
-    const testCompletado = profile?.test_completado ?? false;
+    const testCompletado = profile?.onboarding_completado ?? false;
 
     return (
         <DashboardUI
