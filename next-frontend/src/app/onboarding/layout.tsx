@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import OnboardingShell from '@/components/onboarding/OnboardingShell';
+import { OnboardingProvider } from '@/components/onboarding/OnboardingContext';
 
 export default async function OnboardingLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -8,5 +9,9 @@ export default async function OnboardingLayout({ children }: { children: React.R
 
   if (!user) redirect('/login');
 
-  return <OnboardingShell>{children}</OnboardingShell>;
+  return (
+    <OnboardingProvider userId={user.id}>
+      <OnboardingShell>{children}</OnboardingShell>
+    </OnboardingProvider>
+  );
 }

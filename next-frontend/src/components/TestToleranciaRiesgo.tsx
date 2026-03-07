@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
 import { API_BASE } from '@/lib/constants';
 
 // ---------------------------------------------------------------------------
@@ -49,12 +48,6 @@ const EMPTY_ANSWERS: Answers = {
   certeza_vs_riesgo: null,
   preocupacion: null,
 };
-
-const createClient = () =>
-  createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
 // ---------------------------------------------------------------------------
 // Question data — values match Pydantic Literal fields exactly
@@ -243,7 +236,7 @@ const STEPS = [
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function TestToleranciaRiesgo({ redirectTo = '/dashboard' }: { redirectTo?: string }) {
+export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId }: { redirectTo?: string; userId?: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>(1);
   const [visible, setVisible] = useState(true);
@@ -283,9 +276,6 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard' }: { re
     setError(null);
     const startTime = Date.now();
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
       // Payload matches TestToleranciaInput exactly
       const payload = {
         fondo_emergencia:  answers.fondo_emergencia,
@@ -297,7 +287,7 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard' }: { re
         caida_15:          answers.caida_15,
         certeza_vs_riesgo: answers.certeza_vs_riesgo,
         preocupacion:      answers.preocupacion,
-        user_id:           user?.id ?? null,
+        user_id:           userId ?? null,
       };
 
       const res = await fetch(`${API_BASE}/api/ml/test-tolerancia/`, {

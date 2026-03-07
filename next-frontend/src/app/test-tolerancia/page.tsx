@@ -13,5 +13,5 @@ export default async function TestToleranciaPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/login');
 
-    return <TestToleranciaRiesgo />;
+    return <TestToleranciaRiesgo userId={user.id} />;
 }

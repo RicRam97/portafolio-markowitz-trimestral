@@ -1,11 +1,9 @@
-import type { Metadata } from 'next';
-import TestToleranciaRiesgo from '@/components/TestToleranciaRiesgo';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Tu Perfil de Riesgo — Kaudal',
-  description: 'Descubre tu perfil de inversionista en 3 pasos.',
-};
+import TestToleranciaRiesgo from '@/components/TestToleranciaRiesgo';
+import { useOnboardingUserId } from '@/components/onboarding/OnboardingContext';
 
 export default function OnboardingTestToleranciaPage() {
-  return <TestToleranciaRiesgo redirectTo="/onboarding/resultados" />;
+  const userId = useOnboardingUserId();
+  return <TestToleranciaRiesgo redirectTo="/onboarding/resultados" userId={userId} />;
 }

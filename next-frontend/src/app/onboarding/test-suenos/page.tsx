@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
 import { API_BASE } from '@/lib/constants';
+import { useOnboardingUserId } from '@/components/onboarding/OnboardingContext';
 
 type MetaTipo = 'casa' | 'retiro' | 'educacion' | 'viaje' | 'libertad' | 'otra';
 type Moneda = 'MXN' | 'USD';
@@ -28,12 +28,6 @@ const META_OPTIONS: { value: MetaTipo; label: string; icon: string }[] = [
 
 const CURRENCY_SYMBOL: Record<Moneda, string> = { MXN: '$', USD: 'US$' };
 
-const createClient = () =>
-  createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
 function isFormComplete(f: FormValues) {
   return (
     f.meta_tipo !== '' &&
@@ -46,6 +40,7 @@ function isFormComplete(f: FormValues) {
 
 export default function TestSuenosPage() {
   const router = useRouter();
+  const userId = useOnboardingUserId();
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,9 +68,6 @@ export default function TestSuenosPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
       const payload = {
         meta_tipo: form.meta_tipo,
         meta_dinero: parseFloat(form.meta_dinero),
@@ -83,7 +75,7 @@ export default function TestSuenosPage() {
         ahorro_mensual: parseFloat(form.ahorro_mensual) || 0,
         anos_horizonte: parseInt(form.anos_horizonte),
         moneda: form.moneda,
-        user_id: user?.id ?? null,
+        user_id: userId,
       };
 
       const controller = new AbortController();
