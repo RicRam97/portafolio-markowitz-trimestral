@@ -1,7 +1,6 @@
 FROM python:3.11-slim
 
 # The env var PORT is provided by Railway at runtime
-ENV PORT=8000
 ENV HOST=0.0.0.0
 
 WORKDIR /app
@@ -19,5 +18,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY . .
 
-# Run uvicorn on the port specified by the PORT environment variable
-CMD ["sh", "-c", "uvicorn app.main:app --host $HOST --port $PORT"]
+EXPOSE ${PORT:-8080}
+
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

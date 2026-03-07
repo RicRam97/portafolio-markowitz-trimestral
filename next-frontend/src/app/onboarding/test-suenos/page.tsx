@@ -86,11 +86,17 @@ export default function TestSuenosPage() {
         user_id: user?.id ?? null,
       };
 
-      const res = await fetch(`${API_BASE}/api/ml/test-suenos`, {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+
+      const res = await fetch(`${API_BASE}/api/ml/test-suenos/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeout);
 
       if (!res.ok) {
         const detail = await res.json().catch(() => ({}));
@@ -103,7 +109,15 @@ export default function TestSuenosPage() {
 
       router.push('/onboarding/test-tolerancia');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido. Intenta de nuevo.');
+      const msg =
+        err instanceof DOMException && err.name === 'AbortError'
+          ? 'El servidor no respondió a tiempo. Verifica que el backend esté activo e intenta de nuevo.'
+          : err instanceof TypeError
+            ? 'No se pudo conectar al servidor. Verifica tu conexión o que el backend esté corriendo.'
+            : err instanceof Error
+              ? err.message
+              : 'Error desconocido. Intenta de nuevo.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -300,7 +300,7 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard' }: { re
         user_id:           user?.id ?? null,
       };
 
-      const res = await fetch(`${API_BASE}/api/ml/test-tolerancia`, {
+      const res = await fetch(`${API_BASE}/api/ml/test-tolerancia/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
