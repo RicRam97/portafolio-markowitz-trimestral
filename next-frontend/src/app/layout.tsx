@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Outfit, Inter } from "next/font/google";
-import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
+import HelpWidget from "@/components/HelpWidget";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,13 +26,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased`}
       >
-        <Toaster />
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <Toaster
+            theme="dark"
+            position="top-center"
+            richColors
+            closeButton
+            toastOptions={{ duration: 4000 }}
+          />
+          {children}
+          <HelpWidget />
+        </ThemeProvider>
       </body>
-    </html >
+    </html>
   );
 }

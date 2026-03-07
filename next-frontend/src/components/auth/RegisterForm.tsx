@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { z } from 'zod';
+import { useNotification } from '@/hooks/useNotification';
+import { getErrorMessage, formatErrorToast } from '@/utils/errorMessages';
 
 const createClient = () =>
     createBrowserClient(
@@ -43,6 +45,7 @@ export default function RegisterForm() {
     const [errorMSG, setErrorMSG] = useState<string | null>(null);
     const [successMSG, setSuccessMSG] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
+    const notify = useNotification();
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,16 +85,23 @@ export default function RegisterForm() {
 
             if (error) {
                 if (error.message.includes('already registered')) {
-                    setErrorMSG('El correo ya está registrado.');
+                    const em = getErrorMessage('AUTH_USER_EXISTS');
+                    setErrorMSG(em.message);
+                    notify.error(formatErrorToast(em));
                 } else {
-                    setErrorMSG('Error al crear la cuenta. Intenta de nuevo.');
+                    const em = getErrorMessage('UNKNOWN');
+                    setErrorMSG(em.message);
+                    notify.error(formatErrorToast(em));
                 }
             } else if (data.user) {
-                setSuccessMSG('¡Cuenta creada! Revisa tu correo electrónico para confirmar tu registro.');
+                setSuccessMSG('Cuenta creada! Revisa tu correo electronico para confirmar tu registro.');
+                notify.success('Cuenta creada. Revisa tu correo para confirmar.');
                 setFormData({ nombre: '', apellido: '', fecha_nacimiento: '', email: '', password: '', passwordConfirm: '' });
             }
         } catch (err) {
-            setErrorMSG('Error de conexión. Intenta de nuevo.');
+            const em = getErrorMessage('NETWORK_ERROR');
+            setErrorMSG(em.message);
+            notify.error(formatErrorToast(em));
         } finally {
             setLoading(false);
         }
@@ -114,9 +124,11 @@ export default function RegisterForm() {
                     autoComplete="given-name"
                     value={formData.nombre}
                     onChange={handleChange}
+                    aria-invalid={!!fieldErrors.nombre}
+                    aria-describedby={fieldErrors.nombre ? 'register-nombre-error' : undefined}
                     style={fieldErrors.nombre ? { borderColor: 'var(--danger)' } : {}}
                 />
-                {fieldErrors.nombre && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.nombre}</span>}
+                {fieldErrors.nombre && <span id="register-nombre-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.nombre}</span>}
             </div>
 
             <div className="auth-field">
@@ -130,9 +142,11 @@ export default function RegisterForm() {
                     autoComplete="family-name"
                     value={formData.apellido}
                     onChange={handleChange}
+                    aria-invalid={!!fieldErrors.apellido}
+                    aria-describedby={fieldErrors.apellido ? 'register-apellido-error' : undefined}
                     style={fieldErrors.apellido ? { borderColor: 'var(--danger)' } : {}}
                 />
-                {fieldErrors.apellido && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.apellido}</span>}
+                {fieldErrors.apellido && <span id="register-apellido-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.apellido}</span>}
             </div>
 
             <div className="auth-field">
@@ -144,9 +158,11 @@ export default function RegisterForm() {
                     required
                     value={formData.fecha_nacimiento}
                     onChange={handleChange}
+                    aria-invalid={!!fieldErrors.fecha_nacimiento}
+                    aria-describedby={fieldErrors.fecha_nacimiento ? 'register-fecha-error' : undefined}
                     style={fieldErrors.fecha_nacimiento ? { borderColor: 'var(--danger)' } : {}}
                 />
-                {fieldErrors.fecha_nacimiento && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.fecha_nacimiento}</span>}
+                {fieldErrors.fecha_nacimiento && <span id="register-fecha-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.fecha_nacimiento}</span>}
             </div>
 
             <div className="auth-field">
@@ -160,9 +176,11 @@ export default function RegisterForm() {
                     autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
+                    aria-invalid={!!fieldErrors.email}
+                    aria-describedby={fieldErrors.email ? 'register-email-error' : undefined}
                     style={fieldErrors.email ? { borderColor: 'var(--danger)' } : {}}
                 />
-                {fieldErrors.email && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.email}</span>}
+                {fieldErrors.email && <span id="register-email-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.email}</span>}
             </div>
 
             <div className="auth-field">
@@ -178,6 +196,8 @@ export default function RegisterForm() {
                         autoComplete="new-password"
                         value={formData.password}
                         onChange={handleChange}
+                        aria-invalid={!!fieldErrors.password}
+                        aria-describedby={fieldErrors.password ? 'register-password-error' : 'register-password-hint'}
                         style={fieldErrors.password ? { borderColor: 'var(--danger)' } : {}}
                     />
                     <button
@@ -202,9 +222,9 @@ export default function RegisterForm() {
                     </button>
                 </div>
                 {fieldErrors.password ? (
-                    <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.password}</span>
+                    <span id="register-password-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.password}</span>
                 ) : (
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Mínimo 8 caracteres, 1 mayúscula, 1 número</span>
+                    <span id="register-password-hint" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Mínimo 8 caracteres, 1 mayúscula, 1 número</span>
                 )}
             </div>
 
@@ -220,6 +240,8 @@ export default function RegisterForm() {
                         autoComplete="new-password"
                         value={formData.passwordConfirm}
                         onChange={handleChange}
+                        aria-invalid={!!fieldErrors.passwordConfirm}
+                        aria-describedby={fieldErrors.passwordConfirm ? 'register-confirm-error' : undefined}
                         style={fieldErrors.passwordConfirm ? { borderColor: 'var(--danger)' } : {}}
                     />
                     <button
@@ -243,22 +265,22 @@ export default function RegisterForm() {
                         </svg>
                     </button>
                 </div>
-                {fieldErrors.passwordConfirm && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.passwordConfirm}</span>}
+                {fieldErrors.passwordConfirm && <span id="register-confirm-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.passwordConfirm}</span>}
             </div>
 
             {errorMSG && (
-                <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                <div role="alert" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
                     <p style={{ color: '#fca5a5', fontSize: '0.85rem' }}>{errorMSG}</p>
                 </div>
             )}
 
             {successMSG && (
-                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                <div role="status" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
                     <p style={{ color: '#6ee7b7', fontSize: '0.85rem' }}>{successMSG}</p>
                 </div>
             )}
 
-            <button type="submit" className="btn btn-cta auth-submit" disabled={loading} style={{ position: 'relative' }}>
+            <button type="submit" className="btn btn-cta auth-submit" disabled={loading} aria-disabled={loading} style={{ position: 'relative' }}>
                 <span style={{ opacity: loading ? 0 : 1 }}>Crear cuenta</span>
                 {loading && (
                     <div className="spinner" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, display: 'block' }}></div>

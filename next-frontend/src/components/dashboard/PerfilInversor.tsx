@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/constants';
+import { useNotification } from '@/hooks/useNotification';
+import { getErrorMessage, formatErrorToast } from '@/utils/errorMessages';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -204,6 +206,7 @@ export default function PerfilInversor({ tolerancia, suenos, historial }: Props)
     const [recalcError, setRecalcError] = useState<string | null>(null);
     const [recalcOk, setRecalcOk] = useState(false);
     const [histPage, setHistPage] = useState(0);
+    const notify = useNotification();
 
     const missingTolerancia = !tolerancia;
     const missingSuenos = !suenos;
@@ -226,9 +229,12 @@ export default function PerfilInversor({ tolerancia, suenos, historial }: Props)
             const res = await fetch(`${API_BASE}/api/ml/recalcular-perfil`, { method: 'POST' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             setRecalcOk(true);
+            notify.success('Perfil recalculado exitosamente.');
             router.refresh();
         } catch (err) {
-            setRecalcError('No se pudo recalcular. Intenta de nuevo.');
+            const em = getErrorMessage('PROFILE_RECALC_FAILED');
+            setRecalcError(em.message);
+            notify.error(formatErrorToast(em));
         } finally {
             setRecalcLoading(false);
         }

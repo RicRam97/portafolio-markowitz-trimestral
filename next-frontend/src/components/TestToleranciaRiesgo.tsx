@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE } from '@/lib/constants';
+import EducationalModal from '@/components/onboarding/EducationalModal';
+import { slideIn } from '@/utils/animations';
 
 // ---------------------------------------------------------------------------
 // Types — aligned with TestToleranciaInput / TestToleranciaOutput (FastAPI)
@@ -239,10 +242,10 @@ const STEPS = [
 export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId }: { redirectTo?: string; userId?: string }) {
   const router = useRouter();
   const [phase, setPhase] = useState<Phase>(1);
-  const [visible, setVisible] = useState(true);
   const [answers, setAnswers] = useState<Answers>(EMPTY_ANSWERS);
   const [result, setResult] = useState<TestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showEduModal, setShowEduModal] = useState(false);
 
   const canAdvance =
     (phase === 1 && step1Complete(answers)) ||
@@ -254,11 +257,7 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
   }
 
   function transitionTo(next: Phase) {
-    setVisible(false);
-    setTimeout(() => {
-      setPhase(next);
-      setVisible(true);
-    }, 280);
+    setPhase(next);
   }
 
   function handleNext() {
@@ -316,7 +315,6 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
       const msg = err instanceof Error ? err.message : 'Error desconocido';
       setError(`No pudimos calcular tu perfil: ${msg}. Intenta de nuevo.`);
       setPhase(3);
-      setVisible(true);
     }
   }
 
@@ -324,12 +322,6 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
   const perfilMeta = result ? getPerfilMeta(result.perfil) : PERFIL_META['moderado'];
   const gaugeScore = result?.puntaje_total ?? computeLocalScore(answers);
   const volatPct = result ? (result.volatilidad_maxima * 100).toFixed(0) : '—';
-
-  const wrapStyle: React.CSSProperties = {
-    opacity: visible ? 1 : 0,
-    transform: visible ? 'translateY(0)' : 'translateY(12px)',
-    transition: 'opacity 0.28s ease, transform 0.28s ease',
-  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
@@ -344,10 +336,16 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
           backdropFilter: 'blur(16px)',
         }}
       >
-
+        <AnimatePresence mode="wait">
         {/* ── Steps 1 / 2 / 3 ──────────────────────────────── */}
         {(phase === 1 || phase === 2 || phase === 3) && (
-          <div style={wrapStyle}>
+          <motion.div
+            key={`step-${phase}`}
+            variants={slideIn}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+          >
 
             {/* Progress bar */}
             <div style={{ marginBottom: '28px' }}>
@@ -479,12 +477,19 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
             >
               {phase === 3 ? 'Ver mi perfil' : 'Siguiente'}
             </button>
-          </div>
+          </motion.div>
         )}
 
         {/* ── Calculating ───────────────────────────────────── */}
         {phase === 'calculating' && (
-          <div style={{ ...wrapStyle, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '320px', textAlign: 'center', gap: '20px' }}>
+          <motion.div
+            key="calculating"
+            variants={slideIn}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '320px', textAlign: 'center', gap: '20px' }}
+          >
             <svg viewBox="0 0 72 72" style={{ width: '72px', height: '72px', animation: 'spin 1.2s linear infinite' }}>
               <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="5" />
               <circle cx="36" cy="36" r="30" fill="none" stroke="url(#spinGrad)" strokeWidth="5" strokeLinecap="round" strokeDasharray="120 188" />
@@ -504,12 +509,18 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
               </p>
             </div>
             <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
-          </div>
+          </motion.div>
         )}
 
         {/* ── Results ───────────────────────────────────────── */}
         {phase === 'results' && result && (
-          <div style={wrapStyle}>
+          <motion.div
+            key="results"
+            variants={slideIn}
+            initial="hidden"
+            animate="visible"
+            exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
+          >
             {/* Header */}
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <div style={{ display: 'inline-block', padding: '4px 16px', borderRadius: '99px', background: perfilMeta.bg, border: `1px solid ${perfilMeta.color}40`, marginBottom: '10px' }}>
@@ -575,7 +586,7 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
 
             {/* CTA */}
             <button
-              onClick={() => router.push(redirectTo)}
+              onClick={() => setShowEduModal(true)}
               style={{
                 width: '100%', padding: '14px', borderRadius: '12px', border: 'none', cursor: 'pointer',
                 fontWeight: 600, fontSize: '0.95rem', fontFamily: 'var(--font-display)',
@@ -587,9 +598,28 @@ export default function TestToleranciaRiesgo({ redirectTo = '/dashboard', userId
             >
               {redirectTo.includes('onboarding') ? 'Ver mis Resultados →' : 'Continuar al Dashboard'}
             </button>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
+
+      {result && (
+        <EducationalModal
+          open={showEduModal}
+          titulo={`Tu perfil es ${result.perfil}`}
+          descripcion={`Segun tus respuestas, tu tolerancia maxima al riesgo es de ${(result.volatilidad_maxima * 100).toFixed(0)}% de volatilidad anual. ${result.descripcion_perfil}`}
+          conexion={
+            redirectTo.includes('onboarding')
+              ? 'Ahora combinaremos tu meta financiera con tu perfil de riesgo para generar tus resultados personalizados.'
+              : 'Tu perfil de riesgo ha sido actualizado. El optimizador usara estos limites al construir tu portafolio.'
+          }
+          botonTexto={redirectTo.includes('onboarding') ? 'Ver mis Resultados' : 'Continuar al Dashboard'}
+          onContinue={() => {
+            setShowEduModal(false);
+            router.push(redirectTo);
+          }}
+        />
+      )}
     </div>
   );
 }

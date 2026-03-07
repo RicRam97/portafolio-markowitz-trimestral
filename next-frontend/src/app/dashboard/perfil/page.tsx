@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/utils/supabase/server';
 import PerfilInversor from '@/components/dashboard/PerfilInversor';
+import MisLogros from '@/components/dashboard/MisLogros';
 
 export const metadata: Metadata = {
     title: 'Mi Perfil — Kaudal',
@@ -11,7 +12,7 @@ export default async function PerfilPage() {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
-    const [toleranciaRes, suenosRes, historialRes] = await Promise.all([
+    const [toleranciaRes, suenosRes, historialRes, badgesRes] = await Promise.all([
         supabase
             .from('test_tolerancia')
             .select('perfil_resultado, volatilidad_maxima, puntaje_total, fecha_completado')
@@ -28,13 +29,23 @@ export default async function PerfilPage() {
             .eq('user_id', user!.id)
             .order('fecha', { ascending: false })
             .limit(50),
+        supabase
+            .from('user_badges')
+            .select('badge_id, fecha_obtenido')
+            .eq('user_id', user!.id)
+            .order('fecha_obtenido', { ascending: false }),
     ]);
 
     return (
-        <PerfilInversor
-            tolerancia={toleranciaRes.data ?? null}
-            suenos={suenosRes.data ?? null}
-            historial={historialRes.data ?? []}
-        />
+        <>
+            <PerfilInversor
+                tolerancia={toleranciaRes.data ?? null}
+                suenos={suenosRes.data ?? null}
+                historial={historialRes.data ?? []}
+            />
+            <div style={{ marginTop: '24px', maxWidth: '860px', marginLeft: 'auto', marginRight: 'auto' }}>
+                <MisLogros userBadges={badgesRes.data ?? []} />
+            </div>
+        </>
     );
 }

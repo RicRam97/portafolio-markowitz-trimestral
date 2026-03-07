@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useId } from 'react';
 import { motion } from 'framer-motion';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
@@ -12,6 +12,7 @@ import type {
     OptimizationResult, OptimizerModel, PlanTier,
 } from '@/lib/types';
 import { API_BASE } from '@/lib/constants';
+import EducationalTooltip from '@/components/EducationalTooltip';
 
 /* ─── Palette ──────────────────────────────────────────── */
 const COLORS = [
@@ -189,12 +190,17 @@ function calcularAccionesYEfectivo(
 
 /* ─── Tooltip wrapper ──────────────────────────────────── */
 function InfoTooltip({ text, children }: { text: string; children: React.ReactNode }) {
+    const tooltipId = useId();
     return (
         <Tooltip.Provider delayDuration={200}>
             <Tooltip.Root>
-                <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+                <Tooltip.Trigger asChild>
+                    <span aria-describedby={tooltipId}>{children}</span>
+                </Tooltip.Trigger>
                 <Tooltip.Portal>
                     <Tooltip.Content
+                        id={tooltipId}
+                        role="tooltip"
                         side="top"
                         sideOffset={6}
                         className="z-50 max-w-[220px] rounded-lg px-3 py-2 text-xs leading-relaxed shadow-xl"
@@ -340,19 +346,21 @@ export default function DashboardResultados({
                1. METRICAS PRINCIPALES
                ════════════════════════════════════════════════════ */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
+                {([
                     {
                         label: 'Rendimiento Esperado',
                         sub: 'Anual',
                         value: `${fmt(retPct)}%`,
                         cls: 'positive',
                         tip: 'Retorno anualizado estimado basado en datos historicos de 3 anios.',
+                        tooltipKey: 'retorno_esperado',
                     },
                     {
                         label: 'Volatilidad (Riesgo)',
                         value: `${fmt(volPct)}%`,
                         cls: 'neutral',
                         tip: 'Desviacion estandar anualizada de los retornos. Mide la fluctuacion esperada.',
+                        tooltipKey: 'volatilidad',
                     },
                     {
                         label: 'Ratio de Sharpe',
@@ -360,6 +368,7 @@ export default function DashboardResultados({
                         cls: 'highlight',
                         tip: 'Retorno por unidad de riesgo. Mayor a 1 es excelente.',
                         badge: srInfo,
+                        tooltipKey: 'sharpe_ratio',
                     },
                     {
                         label: 'Efectivo Restante',
@@ -368,7 +377,16 @@ export default function DashboardResultados({
                         tip: `Capital no asignado tras comprar acciones enteras${comisionBroker > 0 ? ` (incluye ${(comisionBroker * 100).toFixed(2)}% comision broker)` : ''}.`,
                         extra: pricesLoading ? undefined : `${fmt(cashPct, 1)}% del presupuesto`,
                     },
-                ].map((m, i) => (
+                ] as Array<{
+                    label: string;
+                    sub?: string;
+                    value: string;
+                    cls: string;
+                    tip: string;
+                    badge?: { text: string; color: string };
+                    extra?: string;
+                    tooltipKey?: 'retorno_esperado' | 'volatilidad' | 'sharpe_ratio';
+                }>).map((m, i) => (
                     <motion.div
                         key={m.label}
                         custom={i}
@@ -394,7 +412,9 @@ export default function DashboardResultados({
                                             {m.sub}
                                         </span>
                                     )}
-                                    <span className="text-[10px] ml-auto opacity-50">?</span>
+                                    {m.tooltipKey && (
+                                        <span className="ml-auto"><EducationalTooltip termKey={m.tooltipKey} /></span>
+                                    )}
                                 </h3>
                                 <div className={`metric-value ${m.cls}`}>
                                     {m.value}
@@ -470,9 +490,12 @@ export default function DashboardResultados({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.4 }}
             >
-                <h3 className="text-sm font-semibold mb-4">Distribucion de Pesos</h3>
+                <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                    Distribucion de Pesos
+                    <EducationalTooltip termKey="peso_activo" />
+                </h3>
                 <div className="flex flex-col lg:flex-row items-center gap-6">
-                    <div className="w-full lg:w-1/2" style={{ height: 300 }}>
+                    <div className="w-full lg:w-1/2" style={{ height: 300 }} role="img" aria-label="Gráfico de composición del portafolio">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -659,8 +682,11 @@ export default function DashboardResultados({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5, duration: 0.4 }}
                 >
-                    <h3 className="text-sm font-semibold mb-4">Frontera Eficiente</h3>
-                    <div style={{ height: 350 }}>
+                    <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+                        Frontera Eficiente
+                        <EducationalTooltip termKey="frontera_eficiente" />
+                    </h3>
+                    <div style={{ height: 350 }} role="img" aria-label="Gráfico de frontera eficiente: relación riesgo-rendimiento del portafolio">
                         <ResponsiveContainer width="100%" height="100%">
                             <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
                                 <CartesianGrid

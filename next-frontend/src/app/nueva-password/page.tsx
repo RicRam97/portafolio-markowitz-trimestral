@@ -6,8 +6,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createBrowserClient } from '@supabase/ssr';
-import toast, { Toaster } from 'react-hot-toast';
+import { toast } from 'sonner';
 import Link from 'next/link';
+import { getErrorMessage, formatErrorToast } from '@/utils/errorMessages';
 
 // ── Supabase client ──────────────────────────────────────────
 const createClient = () =>
@@ -70,7 +71,8 @@ export default function NuevaPasswordPage() {
             const { error } = await supabase.auth.updateUser({ password });
 
             if (error) {
-                toast.error(error.message || 'Ocurrió un error. Intenta de nuevo.');
+                const em = getErrorMessage('UNKNOWN');
+                toast.error(error.message || formatErrorToast(em));
                 setLoading(false);
                 return;
             }
@@ -78,10 +80,11 @@ export default function NuevaPasswordPage() {
             // Sign out to clean up the recovery session
             await supabase.auth.signOut();
 
-            toast.success('¡Contraseña actualizada exitosamente!');
+            toast.success('Contrasena actualizada exitosamente!');
             setTimeout(() => router.push('/login'), 1500);
         } catch (_) {
-            toast.error('Error de conexión. Intenta de nuevo.');
+            const em = getErrorMessage('NETWORK_ERROR');
+            toast.error(formatErrorToast(em));
             setLoading(false);
         }
     };
@@ -117,18 +120,6 @@ export default function NuevaPasswordPage() {
 
     return (
         <main className="min-h-screen relative flex items-center justify-center bg-[#0B1120] px-4 overflow-hidden">
-            {/* React-hot-toast container */}
-            <Toaster
-                position="top-center"
-                toastOptions={{
-                    style: {
-                        background: '#1e293b',
-                        color: '#f1f5f9',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                    },
-                }}
-            />
-
             {/* Background orbs */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-[-10%] left-[-5%] w-[400px] h-[400px] rounded-full bg-blue-600/30 blur-[80px]" />
@@ -184,6 +175,8 @@ export default function NuevaPasswordPage() {
                                         type={showPassword ? 'text' : 'password'}
                                         placeholder="Mínimo 8 caracteres"
                                         autoComplete="new-password"
+                                        aria-invalid={!!errors.password}
+                                        aria-describedby={errors.password ? 'nueva-password-error' : undefined}
                                         {...register('password')}
                                         className={`w-full bg-slate-900/50 border rounded-lg p-3 pr-11 text-sm text-white outline-none transition-colors placeholder-slate-500
                       ${errors.password
@@ -225,7 +218,7 @@ export default function NuevaPasswordPage() {
                                     </div>
                                 )}
                                 {errors.password && (
-                                    <span className="text-xs text-red-400">{errors.password.message}</span>
+                                    <span id="nueva-password-error" role="alert" className="text-xs text-red-400">{errors.password.message}</span>
                                 )}
                             </div>
 
@@ -240,6 +233,8 @@ export default function NuevaPasswordPage() {
                                         type={showConfirm ? 'text' : 'password'}
                                         placeholder="Repite tu nueva contraseña"
                                         autoComplete="new-password"
+                                        aria-invalid={!!errors.confirm}
+                                        aria-describedby={errors.confirm ? 'nueva-confirm-error' : undefined}
                                         {...register('confirm')}
                                         className={`w-full bg-slate-900/50 border rounded-lg p-3 pr-11 text-sm text-white outline-none transition-colors placeholder-slate-500
                       ${errors.confirm
@@ -266,13 +261,14 @@ export default function NuevaPasswordPage() {
                                     </button>
                                 </div>
                                 {errors.confirm && (
-                                    <span className="text-xs text-red-400">{errors.confirm.message}</span>
+                                    <span id="nueva-confirm-error" role="alert" className="text-xs text-red-400">{errors.confirm.message}</span>
                                 )}
                             </div>
 
                             <button
                                 type="submit"
                                 disabled={loading}
+                                aria-disabled={loading}
                                 className="mt-2 w-full bg-[#2563EB] text-white p-3.5 rounded-xl font-semibold hover:bg-[#1D4ED8] transition-all shadow-[0_4px_12px_rgba(37,99,235,0.3)] hover:-translate-y-px flex justify-center items-center disabled:opacity-75 disabled:cursor-not-allowed disabled:transform-none"
                             >
                                 {loading ? (

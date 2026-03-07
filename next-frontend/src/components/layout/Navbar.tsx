@@ -13,17 +13,18 @@ export default function Navbar() {
         { label: 'Inicio', href: '/' },
         { label: 'Conoce Kaudal', href: '/conoce' },
         { label: 'Planes', href: '/planes' },
-        { label: 'Prueba gratuita', href: '/demo' },
+        { label: 'Demo Interaactiva', href: '/demo' },
         { label: 'Soporte', href: '/faq' },
         { label: 'Sobre Kaudal', href: '/acerca' },
     ];
 
     return (
         <>
-            <nav className="landing-nav" id="landing-nav">
+            <nav className="landing-nav" id="landing-nav" aria-label="Menú principal">
                 <div className="nav-inner">
-                    <Link href="/" className="nav-brand" id="nav-brand" style={{ textDecoration: 'none' }}>
+                    <Link href="/" className="nav-brand" id="nav-brand" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Image src="/kaudal-logo2.png" alt="Kaudal" width={120} height={34} className="nav-logo-img" priority />
+                        <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', padding: '2px 6px', borderRadius: '4px', background: 'linear-gradient(135deg, #3b82f6, #10b981)', color: '#fff', lineHeight: '1.2' }}>BETA</span>
                     </Link>
 
                     <div className="nav-links">
@@ -32,6 +33,7 @@ export default function Navbar() {
                                 key={l.href}
                                 href={l.href}
                                 className={`nav-link ${pathname === l.href ? 'active' : ''}`}
+                                {...(pathname === l.href ? { 'aria-current': 'page' as const } : {})}
                             >
                                 {l.label}
                             </Link>
@@ -44,7 +46,8 @@ export default function Navbar() {
                     <button
                         className="nav-hamburger"
                         onClick={() => setMobileOpen(!mobileOpen)}
-                        aria-label="Abrir menú"
+                        aria-label="Menú"
+                        aria-expanded={mobileOpen}
                         style={{ display: 'none' /* Will handle mobile via css overriding or specific state */ }}
                     >
                         <span />

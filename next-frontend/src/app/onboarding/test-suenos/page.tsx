@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { API_BASE } from '@/lib/constants';
 import { useOnboardingUserId } from '@/components/onboarding/OnboardingContext';
+import EducationalModal from '@/components/onboarding/EducationalModal';
 
 type MetaTipo = 'casa' | 'retiro' | 'educacion' | 'viaje' | 'libertad' | 'otra';
 type Moneda = 'MXN' | 'USD';
@@ -44,6 +45,8 @@ export default function TestSuenosPage() {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [resultData, setResultData] = useState<{ retorno_minimo_pct?: number } | null>(null);
   const [form, setForm] = useState<FormValues>({
     meta_tipo: '',
     meta_dinero: '',
@@ -99,7 +102,8 @@ export default function TestSuenosPage() {
       // Cache result so resultados page can show it immediately
       localStorage.setItem('kaudal_suenos_result', JSON.stringify(data));
 
-      router.push('/onboarding/test-tolerancia');
+      setResultData(data);
+      setShowModal(true);
     } catch (err) {
       const msg =
         err instanceof DOMException && err.name === 'AbortError'
@@ -319,6 +323,22 @@ export default function TestSuenosPage() {
           <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </button>
       </div>
+
+      <EducationalModal
+        open={showModal}
+        titulo="Tu meta financiera esta definida"
+        descripcion={
+          resultData?.retorno_minimo_pct
+            ? `Para alcanzar tu objetivo necesitas un retorno minimo anual de ${resultData.retorno_minimo_pct.toFixed(1)}%. Este dato nos ayuda a calibrar el nivel de riesgo adecuado para ti.`
+            : 'Hemos registrado tu meta financiera y calculado el retorno minimo que necesitas para alcanzarla en el plazo que definiste.'
+        }
+        conexion="Por eso ahora evaluaremos tu tolerancia al riesgo, para asegurarnos de que tu portafolio sea compatible con tu perfil emocional."
+        botonTexto="Continuar al Test de Riesgo"
+        onContinue={() => {
+          setShowModal(false);
+          router.push('/onboarding/test-tolerancia');
+        }}
+      />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
 import { z } from 'zod';
 import Link from 'next/link';
+import { useNotification } from '@/hooks/useNotification';
+import { getErrorMessage, formatErrorToast } from '@/utils/errorMessages';
 
 const createClient = () =>
     createBrowserClient(
@@ -33,6 +35,7 @@ export default function LoginForm() {
 
     const [needsConfirmation, setNeedsConfirmation] = useState(false);
     const [resendSuccess, setResendSuccess] = useState(false);
+    const notify = useNotification();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -64,19 +67,28 @@ export default function LoginForm() {
                 const errMsg = error.message;
 
                 if (errMsg.includes('Invalid login credentials')) {
-                    setErrorMSG('Correo o contraseña incorrectos.');
+                    const em = getErrorMessage('AUTH_INVALID_CREDENTIALS');
+                    setErrorMSG(em.message);
+                    notify.error(formatErrorToast(em));
                 } else if (errMsg.includes('Email not confirmed')) {
-                    setErrorMSG('Debes confirmar tu correo antes de entrar.');
+                    const em = getErrorMessage('AUTH_EMAIL_NOT_CONFIRMED');
+                    setErrorMSG(em.message);
                     setNeedsConfirmation(true);
+                    notify.warning(formatErrorToast(em));
                 } else {
-                    setErrorMSG('Error de conexión. Intenta de nuevo.');
+                    const em = getErrorMessage('NETWORK_ERROR');
+                    setErrorMSG(em.message);
+                    notify.error(formatErrorToast(em));
                 }
             } else if (data.session) {
+                notify.success('Sesion iniciada correctamente.');
                 router.push('/dashboard');
                 router.refresh();
             }
         } catch (err) {
-            setErrorMSG('Error de conexión. Intenta de nuevo.');
+            const em = getErrorMessage('NETWORK_ERROR');
+            setErrorMSG(em.message);
+            notify.error(formatErrorToast(em));
         } finally {
             setLoading(false);
         }
@@ -94,13 +106,18 @@ export default function LoginForm() {
             });
 
             if (error) {
-                setErrorMSG('Error al reenviar el correo. Intenta de nuevo.');
+                const em = getErrorMessage('AUTH_RESEND_FAILED');
+                setErrorMSG(em.message);
+                notify.error(formatErrorToast(em));
             } else {
                 setResendSuccess(true);
                 setNeedsConfirmation(false);
+                notify.success('Correo reenviado. Revisa tu bandeja.');
             }
         } catch (err) {
-            setErrorMSG('Error de conexión. Intenta de nuevo.');
+            const em = getErrorMessage('NETWORK_ERROR');
+            setErrorMSG(em.message);
+            notify.error(formatErrorToast(em));
         } finally {
             setLoading(false);
         }
@@ -124,9 +141,11 @@ export default function LoginForm() {
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    aria-invalid={!!fieldErrors.email}
+                    aria-describedby={fieldErrors.email ? 'login-email-error' : undefined}
                     style={fieldErrors.email ? { borderColor: 'var(--danger)' } : {}}
                 />
-                {fieldErrors.email && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.email}</span>}
+                {fieldErrors.email && <span id="login-email-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.email}</span>}
             </div>
 
             <div className="auth-field">
@@ -141,6 +160,8 @@ export default function LoginForm() {
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        aria-invalid={!!fieldErrors.password}
+                        aria-describedby={fieldErrors.password ? 'login-password-error' : undefined}
                         style={fieldErrors.password ? { borderColor: 'var(--danger)' } : {}}
                     />
                     <button
@@ -164,7 +185,7 @@ export default function LoginForm() {
                         </svg>
                     </button>
                 </div>
-                {fieldErrors.password && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.password}</span>}
+                {fieldErrors.password && <span id="login-password-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{fieldErrors.password}</span>}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
                     <Link href="/recuperar-password" style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', textDecoration: 'none' }}>
@@ -174,7 +195,7 @@ export default function LoginForm() {
             </div>
 
             {errorMSG && (
-                <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
+                <div role="alert" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '8px', marginBottom: '16px' }}>
                     <p style={{ color: '#fca5a5', fontSize: '0.85rem' }}>{errorMSG}</p>
                     {needsConfirmation && (
                         <button
@@ -194,7 +215,7 @@ export default function LoginForm() {
                 </div>
             )}
 
-            <button type="submit" className="btn btn-cta auth-submit" disabled={loading} style={{ position: 'relative' }}>
+            <button type="submit" className="btn btn-cta auth-submit" disabled={loading} aria-disabled={loading} style={{ position: 'relative' }}>
                 <span style={{ opacity: loading ? 0 : 1 }}>Iniciar sesión</span>
                 {loading && (
                     <div className="spinner" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, display: 'block' }}></div>

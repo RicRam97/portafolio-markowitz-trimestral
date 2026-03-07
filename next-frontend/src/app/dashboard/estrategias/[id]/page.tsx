@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import { ArrowLeft, TrendingUp } from 'lucide-react';
 import VersionHistorial from './VersionHistorial';
+import EstrategiaMetricas from '@/components/dashboard/EstrategiaMetricas';
 
 export const metadata: Metadata = {
     title: 'Detalle de Estrategia — Kaudal',
@@ -30,10 +31,19 @@ export default async function EstrategiaDetailPage({ params }: PageProps) {
 
     if (!estrategia) notFound();
 
-    // 2. Fetch all portfolio versions linked to this strategy
+    // 2. Fetch user profile for modo_experto
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('modo_experto')
+        .eq('id', user.id)
+        .single();
+
+    const modoExperto = profile?.modo_experto ?? false;
+
+    // 3. Fetch all portfolio versions linked to this strategy
     const { data: portafolios } = await supabase
         .from('portafolios')
-        .select('id, nombre, rendimiento_pct, volatilidad_pct, sharpe_ratio, allocation, created_at')
+        .select('id, nombre, rendimiento_pct, volatilidad_pct, sharpe_ratio, allocation, metricas, created_at')
         .eq('estrategia_id', id)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -45,8 +55,12 @@ export default async function EstrategiaDetailPage({ params }: PageProps) {
         volatilidad_pct: p.volatilidad_pct as number | null,
         sharpe_ratio: p.sharpe_ratio as number | null,
         allocation: (p.allocation ?? []) as { ticker: string; weight_pct: number; shares: number }[],
+        metricas: (p.metricas ?? null) as { max_drawdown?: number } | null,
         created_at: p.created_at as string,
     }));
+
+    // Latest version for the top-level metrics display
+    const latest = versions[0] ?? null;
 
     const tipoLabel = estrategia.tipo === 'markowitz' ? 'Markowitz' : 'HRP';
     const tickers = (estrategia.parametros as Record<string, unknown>)?.tickers as string[] | undefined;
@@ -117,6 +131,19 @@ export default async function EstrategiaDetailPage({ params }: PageProps) {
                     )}
                 </div>
             </div>
+
+            {/* Strategy Metrics — View Levels */}
+            {latest && (
+                <div className="mb-6">
+                    <EstrategiaMetricas
+                        rendimiento_pct={latest.rendimiento_pct}
+                        volatilidad_pct={latest.volatilidad_pct}
+                        sharpe_ratio={latest.sharpe_ratio}
+                        metricas={latest.metricas}
+                        modoExperto={modoExperto}
+                    />
+                </div>
+            )}
 
             {/* Version History */}
             <div className="mb-6">

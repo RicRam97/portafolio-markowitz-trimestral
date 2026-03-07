@@ -3,13 +3,13 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createBrowserClient } from '@supabase/ssr';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 
 export const useSessionExpiry = () => {
     const router = useRouter();
     const warningTimeoutRef = useRef<number | null>(null);
     const expiryTimeoutRef = useRef<number | null>(null);
-    const warningToastIdRef = useRef<string | null>(null);
+    const warningToastIdRef = useRef<string | number | null>(null);
     const activityListenerAdded = useRef(false);
 
     const supabase = createBrowserClient(
@@ -72,24 +72,19 @@ export const useSessionExpiry = () => {
 
             // 55 minutes warning
             warningTimeoutRef.current = window.setTimeout(() => {
-                warningToastIdRef.current = toast(
-                    (t) => (
-                        <div className="flex flex-col gap-2 p-1" style={{ color: 'var(--text-main)', background: 'transparent' }}>
-                            <span className="text-sm font-medium">Tu sesión expirará en 5 minutos por inactividad</span>
-                            <button
-                                onClick={async () => {
-                                    toast.dismiss(t.id);
-                                    await supabase.auth.refreshSession();
-                                    resetTimer();
-                                }}
-                                className="btn btn-cta text-sm py-2 px-3 transition"
-                                style={{ width: '100%' }}
-                            >
-                                Mantener sesión activa
-                            </button>
-                        </div>
-                    ),
-                    { duration: 5 * 60 * 1000, position: 'bottom-center', style: { background: 'rgba(11,17,32,0.95)', border: '1px solid var(--border-light)', backdropFilter: 'blur(12px)' } }
+                warningToastIdRef.current = toast.warning(
+                    'Tu sesión expirará en 5 minutos por inactividad',
+                    {
+                        duration: 5 * 60 * 1000,
+                        closeButton: true,
+                        action: {
+                            label: 'Mantener sesión activa',
+                            onClick: async () => {
+                                await supabase.auth.refreshSession();
+                                resetTimer();
+                            },
+                        },
+                    }
                 );
 
                 // 60 minutes full expiry

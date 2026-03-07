@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { z } from 'zod';
 
 import { createClient } from '@/utils/supabase/client';
+import { useNotification } from '@/hooks/useNotification';
+import { getErrorMessage, formatErrorToast } from '@/utils/errorMessages';
 
 const schema = z.object({
     email: z.string().min(1, 'El correo es requerido').email('Ingresa un correo electrónico válido'),
@@ -17,6 +19,7 @@ export default function RecuperarPasswordPage() {
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const notify = useNotification();
 
     const onSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,12 +43,16 @@ export default function RecuperarPasswordPage() {
 
             if (error) {
                 setErrorMsg(error.message);
+                notify.error(error.message);
                 return;
             }
 
             setSubmitted(true);
+            notify.success('Enlace de recuperación enviado. Revisa tu correo.');
         } catch (err: unknown) {
-            setErrorMsg(err instanceof Error ? err.message : 'Ocurrió un error inesperado al enviar el correo.');
+            const em = getErrorMessage('NETWORK_ERROR');
+            setErrorMsg(em.message);
+            notify.error(formatErrorToast(em));
         } finally {
             setLoading(false);
         }
@@ -84,12 +91,14 @@ export default function RecuperarPasswordPage() {
                                         autoComplete="email"
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
+                                        aria-invalid={!!errorMsg}
+                                        aria-describedby={errorMsg ? 'recuperar-email-error' : undefined}
                                         style={errorMsg ? { borderColor: 'var(--danger)' } : {}}
                                     />
-                                    {errorMsg && <span className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{errorMsg}</span>}
+                                    {errorMsg && <span id="recuperar-email-error" role="alert" className="auth-field-error" style={{ display: 'block', color: 'var(--danger)', fontSize: '0.8rem', marginTop: '4px' }}>{errorMsg}</span>}
                                 </div>
 
-                                <button type="submit" className="btn btn-cta auth-submit" disabled={loading} style={{ position: 'relative', marginTop: '16px' }}>
+                                <button type="submit" className="btn btn-cta auth-submit" disabled={loading} aria-disabled={loading} style={{ position: 'relative', marginTop: '16px' }}>
                                     <span style={{ opacity: loading ? 0 : 1 }}>Enviar enlace</span>
                                     {loading && (
                                         <div className="spinner" style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', margin: 0, display: 'block' }}></div>

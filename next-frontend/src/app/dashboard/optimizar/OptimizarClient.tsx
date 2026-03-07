@@ -1,12 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { createBrowserClient } from '@supabase/ssr';
 import ModelSelector from '@/components/dashboard/ModelSelector';
 import OptimizationLoader from '@/components/dashboard/OptimizationLoader';
 import DashboardResultados from '@/components/dashboard/DashboardResultados';
 import type { OptimizerModel, PlanTier, OptimizationResult } from '@/lib/types';
 import { API_BASE } from '@/lib/constants';
+import { useNotification } from '@/hooks/useNotification';
+import { parseApiError, formatErrorToast, getErrorMessage } from '@/utils/errorMessages';
+import { checkAndAwardBadges } from '@/hooks/useBadges';
 
 export default function OptimizarClient() {
     const [model, setModel] = useState<OptimizerModel>('markowitz');
@@ -17,6 +21,7 @@ export default function OptimizarClient() {
     const [tickerInput, setTickerInput] = useState('');
     const [tickers, setTickers] = useState<string[]>([]);
     const [budget, setBudget] = useState(10000);
+    const notify = useNotification();
 
     // Fetch user plan on mount
     useEffect(() => {
@@ -55,6 +60,7 @@ export default function OptimizarClient() {
 
     const handleOptimize = async () => {
         if (tickers.length < 2) {
+            notify.warning('Selecciona al menos 2 tickers.');
             setError('Selecciona al menos 2 tickers.');
             return;
         }
@@ -91,13 +97,26 @@ export default function OptimizarClient() {
 
             if (!res.ok) {
                 const body = await res.json().catch(() => null);
-                throw new Error(body?.detail || `Error ${res.status}`);
+                const detail = body?.detail;
+                // Structured error from backend: { code, message }
+                if (detail && typeof detail === 'object' && detail.code) {
+                    const errorMsg = getErrorMessage(detail.code);
+                    setError(formatErrorToast(errorMsg));
+                    notify.error(formatErrorToast(errorMsg));
+                } else {
+                    throw new Error(typeof detail === 'string' ? detail : `Error ${res.status}`);
+                }
+                setLoading(false);
+                return;
             }
 
             const data: OptimizationResult = await res.json();
             setResult(data);
+            notify.success('Portafolio optimizado exitosamente.');
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Error inesperado.');
+            const errorMsg = parseApiError(err);
+            setError(formatErrorToast(errorMsg));
+            notify.error(formatErrorToast(errorMsg));
         } finally {
             setLoading(false);
         }
@@ -119,7 +138,7 @@ export default function OptimizarClient() {
             const token = session.session?.access_token;
             if (!token) return;
 
-            await fetch(`${API_BASE}/guardar-portafolio`, {
+            const saveRes = await fetch(`${API_BASE}/guardar-portafolio`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -131,8 +150,26 @@ export default function OptimizarClient() {
                     model,
                 }),
             });
-        } catch {
-            // silent fail — TODO: toast
+            notify.success('Portafolio guardado.');
+
+            if (saveRes.ok) {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { count } = await supabase
+                        .from('estrategias')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', user.id);
+
+                    checkAndAwardBadges(user.id, {
+                        sharpeRatio: result.portafolio_optimo?.sharpe_ratio,
+                        tickerCount: tickers.length,
+                        strategyCount: count ?? 1,
+                    });
+                }
+            }
+        } catch (err) {
+            const errorMsg = getErrorMessage('STRATEGY_SAVE_FAILED');
+            notify.error(formatErrorToast(errorMsg));
         }
     };
 
@@ -236,13 +273,15 @@ export default function OptimizarClient() {
                     </div>
 
                     {/* Optimize button */}
-                    <button
+                    <motion.button
                         onClick={handleOptimize}
                         disabled={loading || tickers.length < 2}
                         className="btn btn-cta glow-effect w-full text-sm py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                     >
                         {loading ? 'Optimizando...' : 'Optimizar Portafolio'}
-                    </button>
+                    </motion.button>
                 </aside>
 
                 {/* ===== MAIN CONTENT ===== */}

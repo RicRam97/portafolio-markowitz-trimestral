@@ -3,6 +3,7 @@ import httpx
 from fastapi import Request, HTTPException, Depends
 from jose import jwt, JWTError, ExpiredSignatureError
 from config import SUPABASE_JWT_SECRET, SUPABASE_URL, log
+from error_codes import api_error
 
 # Cache for JWKS keys (ES256)
 _jwks_cache: dict | None = None
@@ -76,16 +77,10 @@ def verify_supabase_token(token: str) -> dict:
     except HTTPException:
         raise
     except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=401,
-            detail="Tu sesión expiró. Por favor, inicia sesión nuevamente.",
-        )
+        api_error(401, "AUTH_SESSION_EXPIRED", "Tu sesion expiro. Por favor, inicia sesion nuevamente.")
     except JWTError as e:
         log.warning(f"JWT inválido: {e}")
-        raise HTTPException(
-            status_code=401,
-            detail="Token de autenticación inválido.",
-        )
+        api_error(401, "AUTH_REQUIRED", "Token de autenticacion invalido.")
 
 
 def _extract_bearer(request: Request) -> str | None:
@@ -104,10 +99,7 @@ async def get_current_user(request: Request) -> dict:
     """
     token = _extract_bearer(request)
     if not token:
-        raise HTTPException(
-            status_code=401,
-            detail="Se requiere autenticación. Incluye el header Authorization: Bearer <token>.",
-        )
+        api_error(401, "AUTH_REQUIRED", "Se requiere autenticacion. Incluye el header Authorization: Bearer <token>.")
 
     payload = verify_supabase_token(token)
 

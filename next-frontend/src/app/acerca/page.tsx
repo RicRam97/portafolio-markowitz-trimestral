@@ -69,7 +69,7 @@ export default function AcercaPage() {
                                         👨‍💻
                                     </div>
                                     <div>
-                                        <h3 style={{ fontSize: '1.2rem', marginBottom: '4px', fontFamily: 'var(--font-display)' }}>Creado por Ricardo Ramírez</h3>
+                                        <h3 style={{ fontSize: '1.2rem', marginBottom: '4px', fontFamily: 'var(--font-display)' }}>Fundado por Ricardo Ramírez</h3>
                                         <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600 }}>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                                 <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
@@ -81,6 +81,15 @@ export default function AcercaPage() {
                                 <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, fontStyle: 'italic', borderLeft: '3px solid rgba(255,255,255,0.1)', paddingLeft: '16px' }}>
                                     &ldquo;Desarrollé Kaudal como una herramienta matemática honesta. Quiero empoderar a los verdaderos inversionistas para que tomen control de su propio proceso. Creo en la democratización de las herramientas de inversión.&rdquo;
                                 </p>
+                                <a href="https://www.credential.net/5ea15f44-9cf4-4f0c-8f5b-4615c705b01d" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', textDecoration: 'none', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.08)', transition: 'background 0.2s' }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src="https://pdf.ms.credential.net/badge/image?env=production&credential=kudg57op" alt="Insignia Invirtiendo en la Bolsa - Tecnológico de Monterrey" width={48} height={48} style={{ borderRadius: '6px', flexShrink: 0 }} />
+                                    <div>
+                                        <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>Invirtiendo en la Bolsa</p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: '2px 0 0' }}>Tecnológico de Monterrey · 40 horas · 2023</p>
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', margin: '2px 0 0' }}>Ver credencial verificada →</p>
+                                    </div>
+                                </a>
                             </div>
                         </section>
                     </article>

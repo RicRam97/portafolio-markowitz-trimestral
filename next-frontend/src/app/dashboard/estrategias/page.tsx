@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { createClient } from '@/utils/supabase/server';
 import type { PlanTier } from '@/lib/types';
 import { PLAN_LIMITS, PLAN_LABELS, PLAN_UPGRADE_TARGET } from '@/lib/constants';
-import { Layers, ArrowUpRight, Crosshair } from 'lucide-react';
+import { Layers, ArrowUpRight } from 'lucide-react';
 import EstrategiaDetail from './EstrategiaDetail';
+import EstrategiasEmptyState from './EstrategiasEmptyState';
 
 export const metadata: Metadata = {
     title: 'Estrategias — Kaudal',
@@ -137,32 +138,7 @@ export default async function EstrategiasPage() {
                     ))}
                 </div>
             ) : (
-                <div className="glass-panel p-10 text-center">
-                    <div
-                        className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                        style={{ background: 'rgba(37,99,235,0.1)' }}
-                    >
-                        <Layers className="w-8 h-8" style={{ color: 'var(--accent-primary)' }} />
-                    </div>
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--text-main)' }}>
-                        Sin estrategias aun
-                    </h3>
-                    <p className="text-sm mb-6 max-w-md mx-auto" style={{ color: 'var(--text-muted)' }}>
-                        Crea tu primera estrategia desde el optimizador para verla aqui con sus metricas
-                        y frontera eficiente.
-                    </p>
-                    <Link
-                        href="/dashboard/optimizar"
-                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02]"
-                        style={{
-                            background: 'linear-gradient(135deg, #2563eb, #14b8a6)',
-                            color: '#fff',
-                        }}
-                    >
-                        <Crosshair className="w-4 h-4" />
-                        Ir al Optimizador
-                    </Link>
-                </div>
+                <EstrategiasEmptyState />
             )}
         </div>
     );

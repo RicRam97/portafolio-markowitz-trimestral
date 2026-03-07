@@ -1,0 +1,26 @@
+{
+  "sharpe_ratio": {
+    "titulo": "Ratio de Sharpe",
+    "contenido": "Mide el retorno ajustado por riesgo. Valores mayores a 1.0 se consideran excelentes; entre 0.5 y 1.0, buenos; menores a 0.5, bajos."
+  },
+  "volatilidad": {
+    "titulo": "Volatilidad",
+    "contenido": "Desviacion estandar anualizada de los retornos. Indica cuanto fluctua el valor del portafolio; a mayor volatilidad, mayor riesgo."
+  },
+  "retorno_esperado": {
+    "titulo": "Retorno Esperado",
+    "contenido": "Rendimiento anualizado estimado basado en datos historicos. No garantiza resultados futuros, pero indica la tendencia probable."
+  },
+  "frontera_eficiente": {
+    "titulo": "Frontera Eficiente",
+    "contenido": "Curva que muestra las combinaciones optimas de riesgo y retorno. Todo portafolio sobre la frontera maximiza el retorno para su nivel de riesgo."
+  },
+  "rebalanceo": {
+    "titulo": "Rebalanceo",
+    "contenido": "Proceso de ajustar los pesos del portafolio a sus valores objetivo. Mantiene el perfil de riesgo alineado con tu estrategia original."
+  },
+  "peso_activo": {
+    "titulo": "Peso del Activo",
+    "contenido": "Porcentaje del presupuesto total asignado a cada accion. La suma de todos los pesos debe ser 100% para un portafolio completo."
+  }
+}

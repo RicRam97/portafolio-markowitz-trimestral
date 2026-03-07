@@ -1,14 +1,18 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
     Tooltip as RechartsTooltip, ResponsiveContainer, Cell,
 } from 'recharts';
 import Link from 'next/link';
 import { ChevronDown, ChevronUp, TrendingUp, Activity, BarChart3, History, FileDown, FileSpreadsheet, Share2, Copy, Check, X } from 'lucide-react';
+import EducationalTooltip, { type TooltipKey } from '@/components/EducationalTooltip';
 import { createBrowserClient } from '@supabase/ssr';
 import { API_BASE } from '@/lib/constants';
+import { useNotification } from '@/hooks/useNotification';
+import { scaleIn, fadeIn, modalBackdrop, modalContent } from '@/utils/animations';
 import * as XLSX from 'xlsx';
 
 interface FrontierPoint {
@@ -59,6 +63,7 @@ export default function EstrategiaDetail({ estrategia }: Props) {
     const [shareLink, setShareLink] = useState('');
     const [shareLoading, setShareLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const notify = useNotification();
 
     const handleShare = async () => {
         setShareLoading(true);
@@ -84,7 +89,7 @@ export default function EstrategiaDetail({ estrategia }: Props) {
             setShareLink(data.link);
             setShareModal(true);
         } catch {
-            // silent
+            notify.error('Error al generar el link de compartir.');
         } finally {
             setShareLoading(false);
         }
@@ -93,6 +98,7 @@ export default function EstrategiaDetail({ estrategia }: Props) {
     const handleCopy = async () => {
         await navigator.clipboard.writeText(shareLink);
         setCopied(true);
+        notify.success('Link copiado al portapapeles.');
         setTimeout(() => setCopied(false), 2000);
     };
 
@@ -117,7 +123,7 @@ export default function EstrategiaDetail({ estrategia }: Props) {
             const url = URL.createObjectURL(blob);
             window.open(url, '_blank');
         } catch {
-            // silent
+            notify.error('Error al generar el PDF.');
         } finally {
             setPdfLoading(false);
         }
@@ -183,13 +189,22 @@ export default function EstrategiaDetail({ estrategia }: Props) {
         day: 'numeric', month: 'short', year: 'numeric',
     });
 
-    const metrics = [
+    const metrics: {
+        label: string;
+        sub?: string;
+        value: string;
+        icon: typeof TrendingUp;
+        color: string;
+        badge?: { text: string; color: string };
+        tooltipKey: TooltipKey;
+    }[] = [
         {
             label: 'Retorno Esperado',
             sub: 'Anual',
             value: ret != null ? `${fmt(ret)}%` : '--',
             icon: TrendingUp,
             color: 'var(--success)',
+            tooltipKey: 'retorno_esperado',
         },
         {
             label: 'Volatilidad',
@@ -197,6 +212,7 @@ export default function EstrategiaDetail({ estrategia }: Props) {
             value: vol != null ? `${fmt(vol)}%` : '--',
             icon: Activity,
             color: 'var(--warning)',
+            tooltipKey: 'volatilidad',
         },
         {
             label: 'Ratio de Sharpe',
@@ -204,11 +220,17 @@ export default function EstrategiaDetail({ estrategia }: Props) {
             icon: BarChart3,
             color: 'var(--accent-primary)',
             badge: sharpe != null ? sharpeLabel(sharpe) : undefined,
+            tooltipKey: 'sharpe_ratio',
         },
     ];
 
     return (
-        <div className="glass-panel overflow-hidden">
+        <motion.div
+            className="glass-panel overflow-hidden"
+            variants={scaleIn}
+            initial="hidden"
+            animate="visible"
+        >
             {/* Header row — always visible */}
             <button
                 onClick={() => setOpen((o) => !o)}
@@ -291,6 +313,7 @@ export default function EstrategiaDetail({ estrategia }: Props) {
                                                 </span>
                                             )}
                                         </span>
+                                        <EducationalTooltip termKey={m.tooltipKey} />
                                     </div>
                                     <div className="flex items-baseline gap-2">
                                         <span
@@ -316,8 +339,9 @@ export default function EstrategiaDetail({ estrategia }: Props) {
                     {/* Efficient Frontier Chart */}
                     {frontierData.length > 0 && (
                         <div className="glass-panel p-5">
-                            <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-main)' }}>
+                            <h4 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-main)' }}>
                                 Frontera Eficiente
+                                <EducationalTooltip termKey="frontera_eficiente" />
                             </h4>
                             <div style={{ height: 320 }}>
                                 <ResponsiveContainer width="100%" height="100%">
@@ -466,13 +490,24 @@ export default function EstrategiaDetail({ estrategia }: Props) {
             )}
 
             {/* Share modal */}
+            <AnimatePresence>
             {shareModal && (
-                <div
+                <motion.div
+                    key="share-backdrop"
+                    variants={modalBackdrop}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
                     className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     style={{ background: 'rgba(0,0,0,0.6)' }}
                     onClick={() => setShareModal(false)}
                 >
-                    <div
+                    <motion.div
+                        key="share-content"
+                        variants={modalContent}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
                         className="glass-panel p-6 w-full max-w-md relative"
                         style={{ border: '1px solid var(--border-light)' }}
                         onClick={(e) => e.stopPropagation()}
@@ -527,9 +562,10 @@ export default function EstrategiaDetail({ estrategia }: Props) {
                                 {copied ? 'Copiado' : 'Copiar'}
                             </button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
-        </div>
+            </AnimatePresence>
+        </motion.div>
     );
 }

@@ -1,0 +1,86 @@
+[
+  {
+    "id": "que-es-kaudal",
+    "categoria": "Primeros pasos",
+    "pregunta": "¿Qué es Kaudal y para qué sirve?",
+    "respuesta": "Kaudal es una herramienta educativa de optimización de portafolios basada en la Teoría Moderna de Portafolios de Harry Markowitz. Te permite simular y analizar combinaciones de activos financieros para entender cómo funciona la diversificación."
+  },
+  {
+    "id": "como-crear-cuenta",
+    "categoria": "Primeros pasos",
+    "pregunta": "¿Cómo creo mi cuenta en Kaudal?",
+    "respuesta": "Haz clic en \"Crear cuenta\" en la página de inicio, ingresa tu nombre, correo y contraseña. Recibirás un correo de confirmación para activar tu cuenta."
+  },
+  {
+    "id": "como-crear-portafolio",
+    "categoria": "Primeros pasos",
+    "pregunta": "¿Cómo creo mi primer portafolio?",
+    "respuesta": "Ve a la sección \"Optimizar\" en el dashboard. Selecciona los tickers (activos) que te interesen, ingresa tu presupuesto y haz clic en \"Optimizar\". El sistema calculará la mejor distribución usando el modelo de Markowitz."
+  },
+  {
+    "id": "como-crear-estrategia",
+    "categoria": "Primeros pasos",
+    "pregunta": "¿Cómo creo mi primera estrategia?",
+    "respuesta": "Ve a Dashboard → Estrategias → Crear Nueva. Selecciona los activos, define tu presupuesto y horizonte temporal, y el sistema generará una estrategia optimizada con la distribución sugerida."
+  },
+  {
+    "id": "que-es-markowitz",
+    "categoria": "Estrategias y Portafolios",
+    "pregunta": "¿Qué es el modelo de Markowitz?",
+    "respuesta": "Es un modelo matemático creado por Harry Markowitz (Premio Nobel 1990) que busca la combinación óptima de activos para maximizar el rendimiento esperado dado un nivel de riesgo. También se conoce como optimización de Media-Varianza."
+  },
+  {
+    "id": "ratio-sharpe",
+    "categoria": "Estrategias y Portafolios",
+    "pregunta": "¿Qué significa el Ratio de Sharpe en mis resultados?",
+    "respuesta": "El Ratio de Sharpe mide cuánto rendimiento extra obtienes por cada unidad de riesgo. Un valor mayor a 1.0 se considera bueno, mayor a 2.0 es muy bueno. Te ayuda a comparar qué tan eficiente es un portafolio respecto al riesgo que asumes."
+  },
+  {
+    "id": "rebalanceo",
+    "categoria": "Estrategias y Portafolios",
+    "pregunta": "¿Qué es el rebalanceo y por qué importa?",
+    "respuesta": "El rebalanceo es ajustar los pesos de tus activos para que vuelvan a la distribución original. Con el tiempo, los precios cambian y un activo puede representar más (o menos) de lo planeado, alterando tu nivel de riesgo."
+  },
+  {
+    "id": "frontera-eficiente",
+    "categoria": "Estrategias y Portafolios",
+    "pregunta": "¿Qué es la frontera eficiente?",
+    "respuesta": "La frontera eficiente es la curva que muestra las mejores combinaciones posibles de riesgo y rendimiento. Cualquier portafolio sobre esta curva es óptimo: no puedes obtener más rendimiento sin asumir más riesgo."
+  },
+  {
+    "id": "cambiar-plan",
+    "categoria": "Mi cuenta",
+    "pregunta": "¿Cómo cambio mi plan?",
+    "respuesta": "Ve a la sección \"Mi Cuenta\" en el dashboard y selecciona el plan que desees. Los cambios se aplican de inmediato. Si actualizas, solo se cobra la diferencia proporcional al tiempo restante."
+  },
+  {
+    "id": "cancelar-plan",
+    "categoria": "Mi cuenta",
+    "pregunta": "¿Puedo cancelar mi plan en cualquier momento?",
+    "respuesta": "Sí. Puedes cancelar tu suscripción en cualquier momento desde \"Mi Cuenta\". Mantendrás el acceso hasta que termine tu periodo de facturación actual. No hay penalizaciones por cancelar."
+  },
+  {
+    "id": "metodos-pago",
+    "categoria": "Mi cuenta",
+    "pregunta": "¿Qué métodos de pago aceptan?",
+    "respuesta": "Aceptamos tarjetas de crédito y débito (Visa, Mastercard, American Express). Todos los pagos se procesan de forma segura a través de Stripe. No almacenamos los datos de tu tarjeta en nuestros servidores."
+  },
+  {
+    "id": "proteccion-password",
+    "categoria": "Seguridad",
+    "pregunta": "¿Cómo protegen mi contraseña?",
+    "respuesta": "Tu contraseña se encripta con bcrypt antes de almacenarse. Nunca guardamos contraseñas en texto plano. Además, usamos Supabase Auth que cumple con los estándares de seguridad de la industria."
+  },
+  {
+    "id": "datos-personales",
+    "categoria": "Seguridad",
+    "pregunta": "¿Qué datos personales almacenan?",
+    "respuesta": "Solo almacenamos tu correo electrónico, nombre y los portafolios que guardas. No recopilamos datos financieros reales como números de cuenta o CLABE. Consulta nuestro Aviso de Privacidad para más detalles."
+  },
+  {
+    "id": "acceso-cuentas-inversion",
+    "categoria": "Seguridad",
+    "pregunta": "¿Pueden acceder a mis cuentas de inversión?",
+    "respuesta": "No. Kaudal es una herramienta 100% educativa y de simulación. No nos conectamos a ninguna casa de bolsa ni cuenta bancaria. Los presupuestos que ingresas son solo números de referencia para los cálculos."
+  }
+]

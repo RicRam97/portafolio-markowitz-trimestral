@@ -30,6 +30,7 @@ from auth import get_current_user, get_optional_user
 from data_fetcher import get_historical_prices, get_benchmarks, DataFetchError
 from data_fetcher.fetcher import get_historical_prices_fmp
 from ml_pipeline import ingest_daily_prices, train_and_predict
+from error_codes import api_error
 
 # ── Rate Limiter Setup ──────────────────────────────────────
 limiter = Limiter(key_func=get_remote_address)
@@ -44,7 +45,10 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
     return JSONResponse(
         status_code=429,
         content={
-            "detail": "⏱️ Has excedido el límite de solicitudes. Por favor, espera un momento antes de intentar de nuevo.",
+            "detail": {
+                "code": "RATE_LIMITED",
+                "message": "Has excedido el limite de solicitudes. Espera un momento antes de intentar de nuevo.",
+            },
             "retry_after": str(exc.detail),
         },
     )
@@ -528,9 +532,9 @@ async def optimize_portfolio_sse(
     log.info(f"Optimize request from user={user['user_id']}, budget=${req.budget}")
 
     if len(req.tickers) < 2:
-        raise HTTPException(status_code=400, detail="Debe proveer al menos 2 tickers.")
+        api_error(400, "OPTIMIZATION_MIN_TICKERS", "Debe proveer al menos 2 tickers.")
     if req.budget <= 0:
-        raise HTTPException(status_code=400, detail="El presupuesto debe ser mayor a 0.")
+        api_error(400, "OPTIMIZATION_INVALID_BUDGET", "El presupuesto debe ser mayor a 0.")
 
     increment_optimization_count()
 
@@ -788,7 +792,7 @@ async def optimizar_markowitz_endpoint(
     # Normalizar tickers
     tickers = [t.strip().upper() for t in req.tickers if t.strip()]
     if len(tickers) < 2:
-        raise HTTPException(status_code=422, detail="Debe proveer al menos 2 tickers validos.")
+        api_error(422, "OPTIMIZATION_MIN_TICKERS", "Debe proveer al menos 2 tickers validos.")
 
     # ── 1. Obtener precios historicos (FMP + Cache-Aside) ─────────
     try:
@@ -797,11 +801,8 @@ async def optimizar_markowitz_endpoint(
         )
     except DataFetchError as e:
         if e.failed_tickers:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}",
-            )
-        raise HTTPException(status_code=422, detail=str(e))
+            api_error(422, "OPTIMIZATION_INVALID_TICKERS", f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}")
+        api_error(422, "DATA_FETCH_ERROR", str(e))
 
     log_returns = data["returns"]
     tickers_incluidos = data["tickers"]
@@ -809,16 +810,10 @@ async def optimizar_markowitz_endpoint(
 
     # Validar datos suficientes (6 meses)
     if len(log_returns) < 126:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).",
-        )
+        api_error(422, "OPTIMIZATION_INSUFFICIENT_DATA", f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).")
 
     if len(tickers_incluidos) < 2:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}",
-        )
+        api_error(422, "OPTIMIZATION_INVALID_TICKERS", f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}")
 
     # ── 2. Optimizar ─────────────────────────────────────────────
     try:
@@ -831,10 +826,7 @@ async def optimizar_markowitz_endpoint(
         portafolio_optimo = await asyncio.to_thread(optimizer.optimize)
         frontera_eficiente = await asyncio.to_thread(optimizer.efficient_frontier, 50)
     except OptimizerError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"La optimizacion no convergio. Intenta con otros tickers o parametros. Detalle: {str(e)}",
-        )
+        api_error(500, "OPTIMIZATION_INFEASIBLE", f"La optimizacion no convergio. Intenta con otros tickers o parametros. Detalle: {str(e)}")
 
     fecha_calculo = datetime.now()
 
@@ -933,10 +925,7 @@ async def optimizar_hrp_endpoint(
     # ── Verificar tier Pro o Ultra ────────────────────────────
     user_plan = user.get("plan", "basico")
     if user_plan not in ("pro", "ultra"):
-        raise HTTPException(
-            status_code=403,
-            detail="HRP es exclusivo de los planes Pro y Ultra. Actualiza tu plan para desbloquear esta funcionalidad.",
-        )
+        api_error(403, "PLAN_UPGRADE_REQUIRED", "HRP es exclusivo de los planes Pro y Ultra. Actualiza tu plan para desbloquear esta funcionalidad.")
 
     log.info(f"HRP request from user={user['user_id']}, tickers={req.tickers}")
 
@@ -948,7 +937,7 @@ async def optimizar_hrp_endpoint(
     # Normalizar tickers
     tickers = [t.strip().upper() for t in req.tickers if t.strip()]
     if len(tickers) < 2:
-        raise HTTPException(status_code=422, detail="Debe proveer al menos 2 tickers validos.")
+        api_error(422, "OPTIMIZATION_MIN_TICKERS", "Debe proveer al menos 2 tickers validos.")
 
     # ── 1. Obtener precios historicos (FMP + Cache-Aside) ─────
     try:
@@ -957,36 +946,24 @@ async def optimizar_hrp_endpoint(
         )
     except DataFetchError as e:
         if e.failed_tickers:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}",
-            )
-        raise HTTPException(status_code=422, detail=str(e))
+            api_error(422, "OPTIMIZATION_INVALID_TICKERS", f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}")
+        api_error(422, "DATA_FETCH_ERROR", str(e))
 
     log_returns = data["returns"]
     tickers_incluidos = data["tickers"]
     failed = data["failed_tickers"]
 
     if len(log_returns) < 126:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).",
-        )
+        api_error(422, "OPTIMIZATION_INSUFFICIENT_DATA", f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).")
 
     if len(tickers_incluidos) < 2:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}",
-        )
+        api_error(422, "OPTIMIZATION_INVALID_TICKERS", f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}")
 
     # ── 2. Optimizar HRP ──────────────────────────────────────
     try:
         result = await asyncio.to_thread(optimize_hrp, log_returns, peso_maximo)
     except OptimizerError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"La optimizacion HRP no convergio. Intenta con otros tickers o parametros. Detalle: {str(e)}",
-        )
+        api_error(500, "OPTIMIZATION_INFEASIBLE", f"La optimizacion HRP no convergio. Intenta con otros tickers o parametros. Detalle: {str(e)}")
 
     fecha_calculo = datetime.now()
 
@@ -1098,10 +1075,7 @@ async def optimizar_montecarlo_endpoint(
     # ── Verificar tier Ultra ──────────────────────────────────
     user_plan = user.get("plan", "basico")
     if user_plan != "ultra":
-        raise HTTPException(
-            status_code=403,
-            detail="Monte Carlo es exclusivo del plan Ultra. Actualiza tu plan para desbloquear esta funcionalidad.",
-        )
+        api_error(403, "PLAN_UPGRADE_REQUIRED", "Monte Carlo es exclusivo del plan Ultra. Actualiza tu plan para desbloquear esta funcionalidad.")
 
     log.info(f"Monte Carlo request from user={user['user_id']}, tickers={req.tickers}, n={req.num_simulaciones}")
 
@@ -1115,7 +1089,7 @@ async def optimizar_montecarlo_endpoint(
     # Normalizar tickers
     tickers = [t.strip().upper() for t in req.tickers if t.strip()]
     if len(tickers) < 2:
-        raise HTTPException(status_code=422, detail="Debe proveer al menos 2 tickers validos.")
+        api_error(422, "OPTIMIZATION_MIN_TICKERS", "Debe proveer al menos 2 tickers validos.")
 
     # ── 1. Obtener precios historicos (FMP + Cache-Aside) ─────
     try:
@@ -1124,27 +1098,18 @@ async def optimizar_montecarlo_endpoint(
         )
     except DataFetchError as e:
         if e.failed_tickers:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}",
-            )
-        raise HTTPException(status_code=422, detail=str(e))
+            api_error(422, "OPTIMIZATION_INVALID_TICKERS", f"Tickers invalidos o sin datos: {', '.join(e.failed_tickers)}. {str(e)}")
+        api_error(422, "DATA_FETCH_ERROR", str(e))
 
     log_returns = data["returns"]
     tickers_incluidos = data["tickers"]
     failed = data["failed_tickers"]
 
     if len(log_returns) < 126:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).",
-        )
+        api_error(422, "OPTIMIZATION_INSUFFICIENT_DATA", f"Datos insuficientes: solo {len(log_returns)} dias de historial. Se requieren al menos 126 (~6 meses).")
 
     if len(tickers_incluidos) < 2:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}",
-        )
+        api_error(422, "OPTIMIZATION_INVALID_TICKERS", f"Solo se obtuvieron datos para {len(tickers_incluidos)} ticker(s). Se necesitan al menos 2. Fallidos: {', '.join(failed)}")
 
     # ── 2. Simulacion Monte Carlo ─────────────────────────────
     try:
@@ -1157,10 +1122,7 @@ async def optimizar_montecarlo_endpoint(
         result = await asyncio.to_thread(optimizer.optimize)
     except Exception as e:
         log.error(f"Error en Monte Carlo: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error en la simulacion Monte Carlo: {str(e)}",
-        )
+        api_error(500, "OPTIMIZATION_INFEASIBLE", f"Error en la simulacion Monte Carlo: {str(e)}")
 
     fecha_calculo = datetime.now()
 

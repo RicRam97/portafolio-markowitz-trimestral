@@ -4,9 +4,10 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Send, Lock, ArrowUpRight, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
-import toast from 'react-hot-toast';
+import { toast } from 'sonner';
 import type { PlanTier } from '@/lib/types';
 import { PLAN_LABELS } from '@/lib/constants';
+import { getErrorMessage, formatErrorToast } from '@/utils/errorMessages';
 
 const ASUNTO_OPTIONS = [
     'Problema técnico',
@@ -114,7 +115,8 @@ export default function ContactSection({ userPlan, userId }: Props) {
         setSending(false);
 
         if (error) {
-            toast.error('Error al enviar el ticket. Intenta de nuevo.');
+            const em = getErrorMessage('SUPPORT_TICKET_FAILED');
+            toast.error(formatErrorToast(em));
             return;
         }
 
@@ -167,13 +169,16 @@ export default function ContactSection({ userPlan, userId }: Props) {
             <form onSubmit={handleSubmit} className="glass-panel p-6 flex flex-col gap-4">
                 {/* Asunto */}
                 <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label htmlFor="contact-asunto" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                         Asunto
                     </label>
                     <select
+                        id="contact-asunto"
                         value={asunto}
                         onChange={(e) => { setAsunto(e.target.value); setErrors((p) => ({ ...p, asunto: undefined })); }}
                         className="contact-form-input"
+                        aria-invalid={!!errors.asunto}
+                        aria-describedby={errors.asunto ? 'contact-asunto-error' : undefined}
                         style={errors.asunto ? { borderColor: 'var(--danger)' } : undefined}
                     >
                         <option value="">Selecciona un asunto...</option>
@@ -181,29 +186,33 @@ export default function ContactSection({ userPlan, userId }: Props) {
                             <option key={opt} value={opt}>{opt}</option>
                         ))}
                     </select>
-                    {errors.asunto && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.asunto}</p>}
+                    {errors.asunto && <p id="contact-asunto-error" role="alert" className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.asunto}</p>}
                 </div>
 
                 {/* Mensaje */}
                 <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <label htmlFor="contact-mensaje" className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
                         Mensaje
                     </label>
                     <textarea
+                        id="contact-mensaje"
                         value={mensaje}
                         onChange={(e) => { setMensaje(e.target.value); setErrors((p) => ({ ...p, mensaje: undefined })); }}
                         rows={5}
                         placeholder="Describe tu consulta o problema..."
                         className="contact-form-input resize-none"
+                        aria-invalid={!!errors.mensaje}
+                        aria-describedby={errors.mensaje ? 'contact-mensaje-error' : undefined}
                         style={errors.mensaje ? { borderColor: 'var(--danger)' } : undefined}
                     />
-                    {errors.mensaje && <p className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.mensaje}</p>}
+                    {errors.mensaje && <p id="contact-mensaje-error" role="alert" className="text-xs mt-1" style={{ color: 'var(--danger)' }}>{errors.mensaje}</p>}
                 </div>
 
                 {/* Submit */}
                 <button
                     type="submit"
                     disabled={sending}
+                    aria-disabled={sending}
                     className="flex items-center justify-center gap-2 text-sm font-semibold py-2.5 px-4 rounded-lg transition-colors self-end"
                     style={{
                         background: sending ? 'rgba(255,255,255,0.1)' : 'var(--accent-primary)',
