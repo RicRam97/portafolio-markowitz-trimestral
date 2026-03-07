@@ -1816,6 +1816,25 @@ select.contact-form-input option {
   }
 }
 
+/* --- Radix Accordion animations --- */
+@keyframes accordionOpen {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-accordion-content-height); opacity: 1; }
+}
+
+@keyframes accordionClosed {
+  from { height: var(--radix-accordion-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
+
+@utility animate-accordion-open {
+  animation: accordionOpen 200ms ease-out;
+}
+
+@utility animate-accordion-closed {
+  animation: accordionClosed 150ms ease-in;
+}
+
 /* --- MAIN CONTENT AREA --- */
 .main-content {
   display: flex;

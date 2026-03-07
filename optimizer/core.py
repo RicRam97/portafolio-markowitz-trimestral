@@ -267,18 +267,18 @@ def calculate_positions(weights: dict, budget: float, last_prices: pd.Series) ->
     """
     allocation = []
     total_spent = 0.0
-    
+
     sorted_weights = sorted(weights.items(), key=lambda x: x[1], reverse=True)
-    
+
     for ticker, w in sorted_weights:
         if w > 0.0001 and ticker in last_prices:
              price = float(last_prices[ticker])
              target_dollars = budget * w
              shares = int(np.floor(target_dollars / price))
-             
+
              cost = shares * price
              total_spent += cost
-             
+
              allocation.append({
                  "ticker": ticker,
                  "weight_pct": round(w * 100, 2),
@@ -287,7 +287,7 @@ def calculate_positions(weights: dict, budget: float, last_prices: pd.Series) ->
                  "target_amount": round(target_dollars, 2),
                  "invested_amount": round(cost, 2)
              })
-             
+
     remaining_cash = budget - total_spent
     return {
         "positions": allocation,
@@ -295,6 +295,135 @@ def calculate_positions(weights: dict, budget: float, last_prices: pd.Series) ->
         "remaining_cash": round(remaining_cash, 2),
         "total_budget": budget
     }
+
+
+def calcular_acciones_y_efectivo(
+    pesos_optimos: dict[str, float],
+    precios_actuales: dict[str, float],
+    presupuesto_total: float,
+    comision_broker: float = 0.0025,
+) -> dict:
+    """
+    Convierte pesos optimos en numero de acciones enteras y calcula efectivo restante.
+
+    Args:
+        pesos_optimos: {"AAPL": 0.25, "GOOGL": 0.30, ...}
+        precios_actuales: {"AAPL": 150.00, "GOOGL": 120.00, ...}
+        presupuesto_total: 50000.00
+        comision_broker: 0.0025 (0.25%)
+
+    Returns:
+        {
+            "asignacion": { ticker: { peso_teorico, peso_real, acciones, inversion,
+                                      comision, precio_compra } },
+            "efectivo_restante": float,
+            "inversion_total": float,
+            "comisiones_totales": float,
+            "porcentaje_invertido": float,
+            "desviacion_maxima_peso": float,
+        }
+    """
+    presupuesto_disponible = presupuesto_total
+    asignacion: dict[str, dict] = {}
+
+    for ticker, peso in pesos_optimos.items():
+        precio = precios_actuales.get(ticker, 0.0)
+        if precio <= 0:
+            logger.warning(f"Precio no disponible para {ticker}, omitido de asignacion real.")
+            continue
+
+        inversion_objetivo = peso * presupuesto_total
+        num_acciones = int(inversion_objetivo / precio)
+        inversion_real = num_acciones * precio
+        comision = inversion_real * comision_broker
+        costo_total = inversion_real + comision
+        peso_real = inversion_real / presupuesto_total if presupuesto_total > 0 else 0.0
+
+        asignacion[ticker] = {
+            "peso_teorico": round(peso, 6),
+            "peso_real": round(peso_real, 6),
+            "acciones": num_acciones,
+            "inversion": round(inversion_real, 2),
+            "comision": round(comision, 2),
+            "precio_compra": round(precio, 2),
+        }
+        presupuesto_disponible -= costo_total
+
+    efectivo_restante = presupuesto_disponible
+    inversion_total = sum(a["inversion"] for a in asignacion.values())
+    comisiones_totales = sum(a["comision"] for a in asignacion.values())
+    porcentaje_invertido = (inversion_total / presupuesto_total) * 100 if presupuesto_total > 0 else 0.0
+
+    desviaciones = [abs(a["peso_real"] - a["peso_teorico"]) for a in asignacion.values()]
+    desviacion_maxima = max(desviaciones) if desviaciones else 0.0
+
+    return {
+        "asignacion": asignacion,
+        "efectivo_restante": round(efectivo_restante, 2),
+        "inversion_total": round(inversion_total, 2),
+        "comisiones_totales": round(comisiones_totales, 2),
+        "porcentaje_invertido": round(porcentaje_invertido, 2),
+        "desviacion_maxima_peso": round(desviacion_maxima, 6),
+    }
+
+
+def optimizar_efectivo_restante(
+    asignacion: dict[str, dict],
+    efectivo_restante: float,
+    precios: dict[str, float],
+    presupuesto_total: float,
+    max_weight: float = 0.25,
+    comision_broker: float = 0.0025,
+) -> tuple[dict[str, dict], float]:
+    """
+    Intenta reducir el efectivo restante comprando 1 accion adicional por iteracion
+    en el activo que mas reduzca el cash sin exceder max_weight.
+
+    Solo actua si el efectivo restante > 5% del presupuesto total.
+    Devuelve (asignacion_actualizada, efectivo_restante_actualizado).
+    """
+    umbral = 0.05 * presupuesto_total
+
+    while efectivo_restante > umbral:
+        mejor_ticker: str | None = None
+        mejor_costo = 0.0
+
+        for ticker, datos in asignacion.items():
+            precio = precios.get(ticker, 0.0)
+            if precio <= 0:
+                continue
+
+            costo_accion = precio * (1 + comision_broker)
+            if costo_accion > efectivo_restante:
+                continue
+
+            nuevo_peso = (datos["inversion"] + precio) / presupuesto_total
+            if nuevo_peso > max_weight:
+                continue
+
+            # Elegir el activo cuya accion extra sea la mas cara (max reduccion de cash)
+            if precio > mejor_costo:
+                mejor_costo = precio
+                mejor_ticker = ticker
+
+        if mejor_ticker is None:
+            break
+
+        precio_t = precios[mejor_ticker]
+        comision_extra = precio_t * comision_broker
+        asignacion[mejor_ticker]["acciones"] += 1
+        asignacion[mejor_ticker]["inversion"] = round(
+            asignacion[mejor_ticker]["inversion"] + precio_t, 2
+        )
+        asignacion[mejor_ticker]["comision"] = round(
+            asignacion[mejor_ticker]["comision"] + comision_extra, 2
+        )
+        asignacion[mejor_ticker]["peso_real"] = round(
+            asignacion[mejor_ticker]["inversion"] / presupuesto_total, 6
+        )
+        efectivo_restante = round(efectivo_restante - precio_t - comision_extra, 2)
+
+    return asignacion, efectivo_restante
 
 
 class MarkowitzOptimizer:
@@ -442,3 +571,95 @@ class MarkowitzOptimizer:
                 })
 
         return frontier_points
+
+
+class MonteCarloOptimizer:
+    """Optimizador por simulacion Monte Carlo.
+    Genera miles de portafolios aleatorios y selecciona el de maximo Sharpe.
+    """
+
+    def __init__(
+        self,
+        log_returns: pd.DataFrame,
+        num_portfolios: int = 10000,
+        tasa_libre_riesgo: float = 0.04,
+        peso_maximo: float = 0.30,
+    ):
+        self.log_returns = log_returns
+        self.tickers = list(log_returns.columns)
+        self.n = len(self.tickers)
+        self.num_portfolios = num_portfolios
+        self.rf = tasa_libre_riesgo
+        self.peso_maximo = peso_maximo
+
+        self.mu = log_returns.mean().values * 252
+        self.cov = log_returns.cov().values * 252
+
+    def _generate_weights(self) -> np.ndarray:
+        """Genera matriz (num_portfolios x n) de pesos aleatorios validos."""
+        weights = np.random.random((self.num_portfolios, self.n))
+        weights = np.minimum(weights, self.peso_maximo)
+        weights = weights / weights.sum(axis=1, keepdims=True)
+        return weights
+
+    def optimize(self) -> dict:
+        """Ejecuta simulacion Monte Carlo y retorna portafolio optimo + nube."""
+        weights = self._generate_weights()
+
+        # Vectorizado: calcular metricas para todos los portafolios
+        rets = weights @ self.mu
+        vols = np.sqrt((weights @ self.cov * weights).sum(axis=1))
+        sharpes = np.where(vols > 1e-10, (rets - self.rf) / vols, 0.0)
+
+        max_sharpe_idx = int(np.argmax(sharpes))
+        min_vol_idx = int(np.argmin(vols))
+
+        # Portafolio optimo (max Sharpe)
+        w_opt = weights[max_sharpe_idx]
+        portafolio_optimo = {
+            "weights": {
+                self.tickers[i]: round(float(w_opt[i]), 6)
+                for i in range(self.n) if w_opt[i] > 1e-6
+            },
+            "expected_return": round(float(rets[max_sharpe_idx]), 6),
+            "volatility": round(float(vols[max_sharpe_idx]), 6),
+            "sharpe_ratio": round(float(sharpes[max_sharpe_idx]), 4),
+        }
+
+        # Portafolio minima volatilidad
+        w_min = weights[min_vol_idx]
+        portafolio_min_vol = {
+            "weights": {
+                self.tickers[i]: round(float(w_min[i]), 6)
+                for i in range(self.n) if w_min[i] > 1e-6
+            },
+            "expected_return": round(float(rets[min_vol_idx]), 6),
+            "volatility": round(float(vols[min_vol_idx]), 6),
+            "sharpe_ratio": round(float(sharpes[min_vol_idx]), 4),
+        }
+
+        # Nube de puntos (subsample para payload ligero, max 2000)
+        max_cloud = min(2000, self.num_portfolios)
+        subset = np.random.choice(
+            self.num_portfolios, max_cloud, replace=False
+        )
+        # Asegurar que puntos clave estan incluidos
+        subset = list(set(subset) | {max_sharpe_idx, min_vol_idx})
+
+        cloud = [
+            {
+                "ret": round(float(rets[i]), 4),
+                "vol": round(float(vols[i]), 4),
+                "sharpe": round(float(sharpes[i]), 4),
+            }
+            for i in subset
+        ]
+
+        return {
+            "portafolio_optimo": portafolio_optimo,
+            "portafolio_min_vol": portafolio_min_vol,
+            "simulacion": {
+                "num_portfolios": self.num_portfolios,
+                "cloud": cloud,
+            },
+        }

@@ -1,11 +1,14 @@
 import os
-import yfinance as yf
+import httpx
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from supabase.client import create_client, Client
 from sklearn.linear_model import Ridge
-from config import log, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, cargar_tickers
+from config import (
+    log, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY,
+    FMP_API_KEY, FMP_BASE_URL, cargar_tickers,
+)
 from data_fetcher import get_historical_prices, DataFetchError
 
 
@@ -39,53 +42,36 @@ def ingest_daily_prices():
         log.error(f"Error cargando tickers: {e}")
         raise
 
-    # 2. Descargar últimos 5 días (para asegurar solapamiento los fines de semana/feriados)
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=5)
-    
-    fetch_data = []
+    # 2. Descargar ultimos 5 dias (para asegurar solapamiento fines de semana/feriados)
+    end_dt = date.today()
+    start_dt = end_dt - timedelta(days=5)
 
     try:
-        # Usamos try-except interno para no fallar todo si falla 1 lote,
-        # pero get_historical_prices / yfinance ya tiene resiliencia
-        data = yf.download(tickers, start=start_date.strftime('%Y-%m-%d'), end=end_date.strftime('%Y-%m-%d'), group_by="ticker", threads=True, progress=False)
-
         records_to_upsert = []
-        
-        # Parse multi-index columns if plural tickers
-        if isinstance(data.columns, pd.MultiIndex):
-            for ticker in tickers:
-                if ticker in data.columns.levels[0]:
-                    df_ticker = data[ticker].dropna(subset=['Close'])
-                    for date_idx, row in df_ticker.iterrows():
-                        records_to_upsert.append({
-                            "ticker": ticker,
-                            "fecha": date_idx.strftime('%Y-%m-%d'),
-                            "precio_cierre": float(row.get('Close', 0.0) or row.get('Adj Close', 0.0)),
-                            "volumen": int(row.get('Volume', 0)),
-                            # retorno_diario se puede calcular en SQL con LAG o aquí.
-                            # Para mantenerlo simple asíncrono, lo calcularemos post-descarga o con pandas.
-                        })
-        else:
-            # Single ticker fallback (aunque es raro si pasas una lista)
-            ticker = tickers[0]
-            df_ticker = data.dropna(subset=['Close'])
-            for date_idx, row in df_ticker.iterrows():
-                records_to_upsert.append({
-                    "ticker": ticker,
-                    "fecha": date_idx.strftime('%Y-%m-%d'),
-                    "precio_cierre": float(row.get('Close', 0.0) or row.get('Adj Close', 0.0)),
-                    "volumen": int(row.get('Volume', 0)),
-                })
-        
-        # 3. Calcular retornos usando Pandas de la data reciente
-        # (Mejor calcular desde BD o simplemente ingestar y listo. Haremos ingesta directa,
-        # retorno_diario lo podemos dejar vacio o calcular desde DB, pero calculemos el basic pct_change)
-        
-        # En lugar de recalcular pct_change en una ventana diminuta (2 dias),
-        # lo dejamos a la Hypertable y que una View/Query lo procese.
-        
-        # 4. Upsert a Supabase
+
+        for ticker in tickers:
+            url = f"{FMP_BASE_URL}/historical-price-full/{ticker}"
+            params = {
+                "from": start_dt.isoformat(),
+                "to": end_dt.isoformat(),
+                "apikey": FMP_API_KEY,
+            }
+            try:
+                resp = httpx.get(url, params=params, timeout=15)
+                resp.raise_for_status()
+                body = resp.json()
+                historical = body.get("historical", [])
+                for row in historical:
+                    records_to_upsert.append({
+                        "ticker": ticker,
+                        "fecha": row["date"],
+                        "precio_cierre": float(row.get("close", 0.0)),
+                        "volumen": int(row.get("volume", 0)),
+                    })
+            except Exception as e:
+                log.warning(f"FMP fallo para {ticker} en ingesta: {e}")
+
+        # 3. Upsert a Supabase
         if not records_to_upsert:
             log.warning("No se encontraron registros válidos para ingestar.")
             return {"status": "warning", "message": "No data found for the date range."}

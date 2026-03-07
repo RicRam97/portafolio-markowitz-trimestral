@@ -1,22 +1,15 @@
 # data.py — Ingesta, limpieza y calidad de datos
 import pandas as pd
-import numpy as np
-import yfinance as yf
 
 import time
-from traceback import format_exc
-
-import time
-from traceback import format_exc
-import warnings
 import hashlib
 import pickle
 from pathlib import Path
 
 from config import log, BATCH_SIZE, COVERAGE_THRESHOLD, OUTLIER_SIGMA
 
-# Directorio para cache en disco de llamadas a YFinance
-CACHE_DIR = Path(".cache_yf")
+# Directorio para cache en disco
+CACHE_DIR = Path(".cache_fmp")
 CACHE_DIR.mkdir(exist_ok=True)
 
 
@@ -27,78 +20,67 @@ def descargar_lotes(
     interval: str = "1d",
     lote: int = BATCH_SIZE,
 ) -> tuple[pd.DataFrame, list[str]]:
-    """Descarga precios en lotes para evitar rate-limits de yfinance, con caché en disco."""
+    """Descarga precios historicos via FMP, con cache en disco.
+
+    Retorna un DataFrame con MultiIndex (ticker, field) de columnas
+    y una lista de tickers fallidos.
+    """
+    from datetime import date as _date
+    from data_fetcher.fetcher import _fetch_fmp_historical
+
     # 1. Attempt Cache Retrieval
-    cache_key = hashlib.md5(f"{','.join(sorted(tickers))}_{start}_{end}_{interval}".encode()).hexdigest()
+    cache_key = hashlib.md5(
+        f"{','.join(sorted(tickers))}_{start}_{end}_{interval}".encode()
+    ).hexdigest()
     cache_file = CACHE_DIR / f"{cache_key}.pkl"
-    
+
     if cache_file.exists():
-        if time.time() - cache_file.stat().st_mtime < 43200: # 12 hrs
-            log.info("Hit de Caché! Cargando datos desde disco para la petición...")
+        if time.time() - cache_file.stat().st_mtime < 43200:  # 12 hrs
+            log.info("Hit de Cache! Cargando datos desde disco...")
             with open(cache_file, "rb") as f:
                 return pickle.load(f)
-                
-    grupos = [tickers[i : i + lote] for i in range(0, len(tickers), lote)]
+
+    # Normalizar fechas a date objects
+    if isinstance(start, str):
+        start = _date.fromisoformat(start)
+    if isinstance(end, str):
+        end = _date.fromisoformat(end)
+
     frames: list[pd.DataFrame] = []
     fallidos: list[str] = []
-    for idx, g in enumerate(grupos, 1):
-        log.info("Descargando lote %d/%d (%d tickers)…", idx, len(grupos), len(g))
-        # Desactivando auto_adjust warn
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            df = yf.download(
-                g,
-                start=start,
-                end=end,
-                interval=interval,
-                auto_adjust=False, # Mejor control, bajaremos 'Adj Close'
-                progress=False,
-                group_by="ticker"
-            )
-        if df.empty:
-            log.warning("Lote %d devolvió vacío. Intentando procesar tickers individualmente...", idx)
-            time.sleep(1)
-            for single_ticker in g:
-                try:
-                    with warnings.catch_warnings():
-                        warnings.simplefilter("ignore")
-                        single_df = yf.download(
-                            single_ticker,
-                            start=start,
-                            end=end,
-                            interval=interval,
-                            auto_adjust=False,
-                            progress=False
-                        )
-                    if single_df.empty:
-                        fallidos.append(single_ticker)
-                    else:
-                        if single_df.index.tz is not None:
-                            single_df.index = single_df.index.tz_localize(None)
-                        # Para mantener el formato de MultiIndex (ticker, field) que genera el group_by="ticker"
-                        single_df.columns = pd.MultiIndex.from_product([[single_ticker], single_df.columns])
-                        frames.append(single_df)
-                except Exception as e:
-                    log.error("Fallo descargando %s: %s", single_ticker, e)
-                    fallidos.append(single_ticker)
-            continue
-        if df.index.tz is not None:
-            df.index = df.index.tz_localize(None)
-        frames.append(df)
-        time.sleep(2)  # Pausa entre lotes exitosos
+
+    for idx, ticker in enumerate(tickers, 1):
+        log.info("Descargando %d/%d: %s ...", idx, len(tickers), ticker)
+        try:
+            df = _fetch_fmp_historical(ticker, start, end)
+            # Convertir a MultiIndex (ticker, field) para compatibilidad
+            # _fetch_fmp_historical retorna index=date, col='close'
+            # Necesitamos crear columnas: (TICKER, 'Close'), (TICKER, 'Adj Close')
+            close_series = df["close"]
+            ticker_df = pd.DataFrame({
+                (ticker, "Close"): close_series,
+                (ticker, "Adj Close"): close_series,
+            })
+            ticker_df.columns = pd.MultiIndex.from_tuples(ticker_df.columns)
+            frames.append(ticker_df)
+        except Exception as e:
+            log.warning("Fallo descargando %s: %s", ticker, e)
+            fallidos.append(ticker)
+
     if not frames:
-        log.error("Todos los lotes fallaron — no hay datos. Posible bloqueo de IP por Yahoo Finance.")
+        log.error("Todos los tickers fallaron — no hay datos.")
         return pd.DataFrame(), tickers
+
     raw = pd.concat(frames, axis=1).sort_index()
     log.info(
         "Descarga completa: %d filas, %d columnas, %d fallidos",
         len(raw), raw.shape[1], len(fallidos),
     )
-    
+
     # 2. Save Cache
     with open(cache_file, "wb") as f:
         pickle.dump((raw, fallidos), f)
-        
+
     return raw, fallidos
 
 
@@ -345,24 +327,35 @@ def comparar_instrumentos(monto_inversion: float, años: int, rendimiento_portaf
 
 def obtener_dividend_yields_batch(tickers: list[str]) -> dict:
     """
-    Obtiene el dividend yield actual de yahoo finance de forma rápida.
+    Obtiene el dividend yield actual via FMP /profile batch.
     """
-    yields = {}
+    import httpx
+    from config import FMP_API_KEY, FMP_BASE_URL
+
+    yields: dict[str, float] = {}
+    if not tickers:
+        return yields
+
+    symbols = ",".join(tickers)
+    url = f"{FMP_BASE_URL}/profile/{symbols}"
     try:
-        # Desactivando warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            # Usar Tickers class de yf para request en batch a la API info
-            tickers_obj = yf.Tickers(" ".join(tickers))
-            for ticker in tickers:
-                try:
-                    info = tickers_obj.tickers[ticker].info
-                    # yfinance a veces devuelve dict vacio si falla
-                    dy = info.get("dividendYield", 0) or info.get("trailingAnnualDividendYield", 0) or 0
-                    yields[ticker] = float(dy)
-                except Exception:
-                    yields[ticker] = 0.0
+        resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        if isinstance(data, list):
+            for item in data:
+                symbol = item.get("symbol", "")
+                # lastDiv es el dividendo anual en USD; dividimos entre precio
+                last_div = item.get("lastDiv", 0) or 0
+                price = item.get("price", 0) or 0
+                dy = (last_div / price) if price > 0 else 0
+                yields[symbol] = float(dy)
     except Exception as e:
-        log.error(f"Fallo general obteniendo yields: {e}")
-        
+        log.error(f"Fallo obteniendo dividend yields de FMP: {e}")
+
+    # Asegurar que todos los tickers tengan entrada
+    for t in tickers:
+        if t not in yields:
+            yields[t] = 0.0
+
     return yields

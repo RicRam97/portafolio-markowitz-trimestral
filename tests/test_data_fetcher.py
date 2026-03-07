@@ -38,7 +38,7 @@ def test_filter_illiquid_tickers_empty():
     res = filter_illiquid_tickers([])
     assert res == {"valid_tickers": [], "rejected_tickers": {}}
 
-# E2E basic tests (these will hit yfinance)
+# E2E basic tests (these will hit FMP)
 def test_get_historical_prices_live():
     res = get_historical_prices(["AAPL"], "3y")
     assert "prices" in res

@@ -4,8 +4,11 @@ from .core import (
     run_monte_carlo,
     sanity_filters,
     calculate_positions,
+    calcular_acciones_y_efectivo,
+    optimizar_efectivo_restante,
     smart_beta_filter,
     MarkowitzOptimizer,
+    MonteCarloOptimizer,
     OptimizerError
 )
 
@@ -15,7 +18,10 @@ __all__ = [
     "run_monte_carlo",
     "sanity_filters",
     "calculate_positions",
+    "calcular_acciones_y_efectivo",
+    "optimizar_efectivo_restante",
     "smart_beta_filter",
     "MarkowitzOptimizer",
+    "MonteCarloOptimizer",
     "OptimizerError"
 ]

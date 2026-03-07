@@ -63,3 +63,61 @@ export interface SupportTicket {
 }
 
 export type PlanTier = 'basico' | 'pro' | 'ultra';
+
+export type OptimizerModel = 'markowitz' | 'hrp' | 'montecarlo';
+
+export interface PortfolioOptimization {
+    weights: Record<string, number>;
+    expected_return: number;
+    volatility: number;
+    sharpe_ratio: number;
+}
+
+export interface FrontierPoint {
+    expected_return: number;
+    volatility: number;
+    sharpe_ratio: number;
+}
+
+export interface MonteCarloCloudPoint {
+    ret: number;
+    vol: number;
+    sharpe: number;
+}
+
+export interface MonteCarloSimulation {
+    num_portfolios: number;
+    cloud: MonteCarloCloudPoint[];
+}
+
+export interface AsignacionTickerReal {
+    peso_teorico: number;
+    peso_real: number;
+    acciones: number;
+    inversion: number;
+    comision: number;
+    precio_compra: number;
+}
+
+export interface AsignacionReal {
+    asignacion: Record<string, AsignacionTickerReal>;
+    efectivo_restante: number;
+    inversion_total: number;
+    comisiones_totales: number;
+    porcentaje_invertido: number;
+    desviacion_maxima_peso: number;
+    warning?: string;
+}
+
+export interface OptimizationResult {
+    portafolio_optimo: PortfolioOptimization;
+    portafolio_min_vol?: PortfolioOptimization;
+    frontera_eficiente?: FrontierPoint[];
+    simulacion?: MonteCarloSimulation;
+    clustering_data?: number[][] | null;
+    tickers_incluidos: string[];
+    fecha_calculo: string;
+    asignacion_real?: AsignacionReal | null;
+    advertencias?: string[];
+    compatible_con_perfil?: boolean;
+}

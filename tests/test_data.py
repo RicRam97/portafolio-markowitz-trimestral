@@ -5,7 +5,7 @@ from datetime import datetime
 from data import extraer_panel, limpiar_retornos, reporte_calidad
 
 def test_extraer_panel_multiindex():
-    # Setup mock MultiIndex df as yfinance returns
+    # Setup mock MultiIndex df as FMP returns
     dates = pd.date_range("2023-01-01", periods=3)
     tickers = ["AAPL", "MSFT"]
     fields = ["Close", "Volume"]
