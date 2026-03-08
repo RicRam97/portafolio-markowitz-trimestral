@@ -6,6 +6,12 @@ export const PLAN_LIMITS: Record<PlanTier, number> = {
     ultra: 10,
 };
 
+export const TICKER_LIMITS: Record<PlanTier, number> = {
+    basico: 10,
+    pro: 30,
+    ultra: Infinity,
+};
+
 export const PLAN_LABELS: Record<PlanTier, string> = {
     basico: 'Básico',
     pro: 'Pro',
