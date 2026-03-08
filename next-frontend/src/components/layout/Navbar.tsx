@@ -27,18 +27,19 @@ export default function Navbar() {
                         <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.05em', padding: '2px 6px', borderRadius: '4px', background: 'linear-gradient(135deg, #3b82f6, #10b981)', color: '#fff', lineHeight: '1.2' }}>BETA</span>
                     </Link>
 
-                    <div className="nav-links">
+                    <div className={`nav-links${mobileOpen ? ' open' : ''}`}>
                         {links.map((l) => (
                             <Link
                                 key={l.href}
                                 href={l.href}
                                 className={`nav-link ${pathname === l.href ? 'active' : ''}`}
                                 {...(pathname === l.href ? { 'aria-current': 'page' as const } : {})}
+                                onClick={() => setMobileOpen(false)}
                             >
                                 {l.label}
                             </Link>
                         ))}
-                        <Link href="/login" className="nav-link nav-auth-btn">
+                        <Link href="/login" className="nav-link nav-auth-btn" onClick={() => setMobileOpen(false)}>
                             Iniciar sesión
                         </Link>
                     </div>
@@ -48,7 +49,6 @@ export default function Navbar() {
                         onClick={() => setMobileOpen(!mobileOpen)}
                         aria-label="Menú"
                         aria-expanded={mobileOpen}
-                        style={{ display: 'none' /* Will handle mobile via css overriding or specific state */ }}
                     >
                         <span />
                         <span />
@@ -56,26 +56,6 @@ export default function Navbar() {
                     </button>
                 </div>
             </nav>
-
-            {/* For mobile, we would usually toggle a class. Because we ported the CSS directly, we can just inject an inline style if needed, but original CSS used a media query and JS to show/hide `.nav-links`. To respect the prompt, I'll add a mobile menu override exactly as it worked in the original if needed, or just let CSS media queries handle it if that's what `style.css` did. Let's make sure `.nav-links.mobile-open` is applied like the original JS did. */}
-            {mobileOpen && (
-                <style dangerouslySetInnerHTML={{
-                    __html: `
-          @media (max-width: 768px) {
-            .nav-links {
-              display: flex !important;
-              flex-direction: column;
-              position: absolute;
-              top: 60px;
-              left: 0;
-              right: 0;
-              background: rgba(11,17,32,0.98);
-              border-top: 1px solid var(--border-light);
-              padding: 16px;
-            }
-          }
-        `}} />
-            )}
         </>
     );
 }
