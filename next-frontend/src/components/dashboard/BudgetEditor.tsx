@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pencil, X } from 'lucide-react';
 
@@ -18,6 +18,14 @@ interface BudgetEditorProps {
 export default function BudgetEditor({ value, onChange }: BudgetEditorProps) {
     const [isOpen, setIsOpen] = useState(false);
     const [draft, setDraft] = useState(value);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Focus input when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setTimeout(() => inputRef.current?.focus(), 100);
+        }
+    }, [isOpen]);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -74,6 +82,7 @@ export default function BudgetEditor({ value, onChange }: BudgetEditorProps) {
                         transition={{ duration: 0.2 }}
                     >
                         {/* Backdrop */}
+                        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
                         <div
                             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                             onClick={() => setIsOpen(false)}
@@ -108,13 +117,13 @@ export default function BudgetEditor({ value, onChange }: BudgetEditorProps) {
                             <div className="flex items-center gap-2 mb-5">
                                 <span className="text-lg font-semibold" style={{ color: 'var(--text-muted)' }}>$</span>
                                 <input
+                                    ref={inputRef}
                                     type="number"
                                     value={draft}
                                     onChange={(e) => setDraft(Number(e.target.value))}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                                     min={100}
                                     step={100}
-                                    autoFocus
                                     className="flex-1 px-4 py-3 rounded-lg text-base outline-none"
                                     style={{
                                         background: 'rgba(15,23,42,0.6)',
