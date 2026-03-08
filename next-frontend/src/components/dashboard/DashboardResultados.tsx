@@ -105,13 +105,13 @@ function calcularAccionesYEfectivo(
     for (const [ticker, peso] of sorted) {
         const precio = preciosActuales[ticker] ?? 0;
         if (precio <= 0) {
-            // No price available — show theoretical allocation only
+            // No price available — cannot calculate real allocation
             asignacion.push({
                 ticker,
                 peso_teorico: peso,
-                peso_real: peso,
+                peso_real: 0,
                 acciones: 0,
-                inversion: peso * presupuestoTotal,
+                inversion: 0,
                 comision: 0,
                 precio_compra: 0,
                 name: names[ticker] ?? ticker,
@@ -319,6 +319,7 @@ export default function DashboardResultados({
             nameMap[t] = q?.name ?? t;
         }
         return calcularAccionesYEfectivo(weights, priceMap, budget, comisionBroker, nameMap);
+        // quotes is intentionally omitted: pricesLoading always changes alongside quotes
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasBackendAlloc, pricesLoading, budget, comisionBroker]);
 
@@ -462,6 +463,42 @@ export default function DashboardResultados({
                         <b style={{ color: 'var(--text-main)' }}>{fmt(alloc.desviacion_maxima_peso * 100, 2)}%</b>
                         <span style={{ color: 'var(--text-muted)' }}> desviacion max. peso</span>
                     </span>
+                </motion.div>
+            )}
+
+            {/* General backend warnings (e.g. price fetch failure) */}
+            {advertencias.length > 0 && !incompatible && (
+                <motion.div
+                    className="glass-panel p-4 text-sm flex items-start gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.25 }}
+                    style={{ borderLeft: '3px solid var(--warning)' }}
+                >
+                    <span className="text-lg leading-none flex-shrink-0">{'\u26A0\uFE0F'}</span>
+                    <div style={{ color: 'var(--warning)' }}>
+                        {advertencias.map((adv, i) => (
+                            <p key={i}>{adv}</p>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+
+            {/* No prices available — client fallback also failed */}
+            {!pricesLoading && !hasBackendAlloc && !hasPrices && (
+                <motion.div
+                    className="glass-panel p-4 text-sm flex items-start gap-3"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.25 }}
+                    style={{ borderLeft: '3px solid var(--accent-primary)' }}
+                >
+                    <span className="text-lg leading-none flex-shrink-0">{'\u2139\uFE0F'}</span>
+                    <p style={{ color: 'var(--text-muted)' }}>
+                        No se pudieron obtener precios de mercado. La distribucion de pesos es correcta,
+                        pero el desglose por acciones e inversiones no esta disponible en este momento.
+                        Intenta recalcular en unos minutos.
+                    </p>
                 </motion.div>
             )}
 

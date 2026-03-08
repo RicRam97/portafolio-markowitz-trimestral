@@ -141,7 +141,7 @@ def health_check():
 @app.get("/precio-actual/{ticker}")
 @limiter.limit("60/minute")
 def get_precio_actual(request: Request, ticker: str):
-    """Retorna el precio actual de un ticker via FMP /quote."""
+    """Retorna el precio actual de un ticker via FMP /quote con retry + cache."""
     import httpx
     from config import FMP_API_KEY, FMP_BASE_URL
 
@@ -149,31 +149,50 @@ def get_precio_actual(request: Request, ticker: str):
     if not symbol:
         raise HTTPException(status_code=400, detail="Ticker vacio.")
 
-    url = f"{FMP_BASE_URL}/quote/{symbol}"
-    try:
-        resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        if not data or not isinstance(data, list) or len(data) == 0:
-            raise HTTPException(status_code=404, detail=f"No se encontro cotizacion para '{symbol}'.")
-
-        quote = data[0]
+    # Check cache first
+    cached, missing = _get_cached_prices([symbol])
+    if symbol in cached and cached[symbol] > 0:
         return {
             "ticker": symbol,
-            "price": quote.get("price", 0),
-            "name": quote.get("name", symbol),
-            "change_pct": quote.get("changesPercentage", 0),
+            "price": cached[symbol],
+            "name": symbol,
+            "change_pct": 0,
+            "cached": True,
         }
-    except httpx.HTTPStatusError:
-        raise HTTPException(status_code=502, detail=f"Error consultando precio de '{symbol}' en FMP.")
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Error de red consultando FMP: {str(e)}")
+
+    url = f"{FMP_BASE_URL}/quote/{symbol}"
+    last_err = None
+    for attempt in range(1, 3):
+        try:
+            resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            if not data or not isinstance(data, list) or len(data) == 0:
+                raise HTTPException(status_code=404, detail=f"No se encontro cotizacion para '{symbol}'.")
+
+            quote = data[0]
+            price = quote.get("price", 0)
+            _set_cached_prices({symbol: price})
+            return {
+                "ticker": symbol,
+                "price": price,
+                "name": quote.get("name", symbol),
+                "change_pct": quote.get("changesPercentage", 0),
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_err = e
+            if attempt < 2:
+                _time.sleep(1)
+
+    raise HTTPException(status_code=502, detail=f"Error consultando precio de '{symbol}' en FMP tras 2 intentos: {last_err}")
 
 
 @app.get("/precio-actual")
 @limiter.limit("30/minute")
 def get_precios_batch(request: Request, tickers: str = ""):
-    """Retorna precios actuales de multiples tickers via FMP /quote (comma-separated)."""
+    """Retorna precios actuales de multiples tickers via FMP /quote con retry + cache."""
     import httpx
     from config import FMP_API_KEY, FMP_BASE_URL
 
@@ -183,35 +202,62 @@ def get_precios_batch(request: Request, tickers: str = ""):
     if len(ticker_list) > 20:
         raise HTTPException(status_code=400, detail="Maximo 20 tickers por consulta.")
 
-    symbols = ",".join(ticker_list)
-    url = f"{FMP_BASE_URL}/quote/{symbols}"
-    try:
-        resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-        if not isinstance(data, list):
-            data = []
+    # Check cache first
+    cached, missing = _get_cached_prices(ticker_list)
+    result: dict = {}
 
-        result = {}
-        for quote in data:
-            sym = quote.get("symbol", "")
-            result[sym] = {
-                "ticker": sym,
-                "price": quote.get("price", 0),
-                "name": quote.get("name", sym),
-                "change_pct": quote.get("changesPercentage", 0),
-            }
+    # Return cached tickers
+    for sym, price in cached.items():
+        result[sym] = {
+            "ticker": sym,
+            "price": price,
+            "name": sym,
+            "change_pct": 0,
+        }
 
-        # Flag tickers not found
-        for t in ticker_list:
-            if t not in result:
-                result[t] = {"ticker": t, "price": 0, "name": t, "change_pct": 0, "error": True}
+    # Fetch only missing tickers from FMP
+    if missing:
+        symbols = ",".join(missing)
+        url = f"{FMP_BASE_URL}/quote/{symbols}"
+        fetched = False
 
-        return {"prices": result}
-    except httpx.HTTPStatusError:
-        raise HTTPException(status_code=502, detail="Error consultando precios en FMP.")
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=502, detail=f"Error de red consultando FMP: {str(e)}")
+        for attempt in range(1, 3):
+            try:
+                resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=15)
+                resp.raise_for_status()
+                data = resp.json()
+                if not isinstance(data, list):
+                    data = []
+
+                prices_to_cache: dict[str, float] = {}
+                for quote in data:
+                    sym = quote.get("symbol", "")
+                    price = quote.get("price", 0)
+                    result[sym] = {
+                        "ticker": sym,
+                        "price": price,
+                        "name": quote.get("name", sym),
+                        "change_pct": quote.get("changesPercentage", 0),
+                    }
+                    prices_to_cache[sym] = price
+
+                _set_cached_prices(prices_to_cache)
+                fetched = True
+                break
+            except Exception as e:
+                log.warning(f"Error batch precios FMP (intento {attempt}/2): {e}")
+                if attempt < 2:
+                    _time.sleep(1)
+
+        if not fetched:
+            log.error(f"No se pudieron obtener precios batch de FMP para: {','.join(missing)}")
+
+    # Flag tickers not found
+    for t in ticker_list:
+        if t not in result:
+            result[t] = {"ticker": t, "price": 0, "name": t, "change_pct": 0, "error": True}
+
+    return {"prices": result}
 
 
 @app.get("/api/example-fetch")
@@ -613,23 +659,81 @@ async def optimize_portfolio_sse(
 # ════════════════════════════════════════════════════════════
 
 
-def _fetch_current_prices_fmp(tickers: list[str]) -> dict[str, float]:
-    """Obtiene precios actuales via FMP /quote batch. Retorna {ticker: price}."""
+# ── In-memory price cache (TTL 5 min) ─────────────────────────
+import time as _time
+from threading import Lock as _Lock
+
+_price_cache: dict[str, tuple[float, float]] = {}   # ticker -> (price, timestamp)
+_price_cache_lock = _Lock()
+_PRICE_CACHE_TTL = 300  # seconds
+
+
+def _get_cached_prices(tickers: list[str]) -> tuple[dict[str, float], list[str]]:
+    """Return (cached_prices, missing_tickers) from in-memory cache."""
+    now = _time.time()
+    cached: dict[str, float] = {}
+    missing: list[str] = []
+    with _price_cache_lock:
+        for t in tickers:
+            entry = _price_cache.get(t)
+            if entry and (now - entry[1]) < _PRICE_CACHE_TTL:
+                cached[t] = entry[0]
+            else:
+                missing.append(t)
+    return cached, missing
+
+
+def _set_cached_prices(prices: dict[str, float]) -> None:
+    """Store prices in in-memory cache."""
+    now = _time.time()
+    with _price_cache_lock:
+        for t, p in prices.items():
+            if p > 0:
+                _price_cache[t] = (p, now)
+
+
+def _fetch_current_prices_fmp(tickers: list[str], retries: int = 2) -> dict[str, float]:
+    """Obtiene precios actuales via FMP /quote batch con retry + cache en memoria (5 min)."""
     import httpx
     from config import FMP_API_KEY, FMP_BASE_URL
 
-    symbols = ",".join(tickers)
+    # 1. Check in-memory cache first
+    cached, missing = _get_cached_prices(tickers)
+    if not missing:
+        return cached
+
+    # 2. Fetch only missing tickers from FMP
+    symbols = ",".join(missing)
     url = f"{FMP_BASE_URL}/quote/{symbols}"
-    try:
-        resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=15)
-        resp.raise_for_status()
-        data = resp.json()
-        if not isinstance(data, list):
-            return {}
-        return {q["symbol"]: q.get("price", 0) for q in data if "symbol" in q}
-    except Exception as e:
-        log.warning(f"No se pudieron obtener precios actuales de FMP: {e}")
-        return {}
+
+    for attempt in range(1, retries + 1):
+        try:
+            resp = httpx.get(url, params={"apikey": FMP_API_KEY}, timeout=15)
+            resp.raise_for_status()
+            data = resp.json()
+            if not isinstance(data, list):
+                log.warning(f"FMP /quote devolvio tipo inesperado: {type(data).__name__} (intento {attempt}/{retries})")
+                if attempt < retries:
+                    _time.sleep(1)
+                    continue
+                break
+            fresh = {q["symbol"]: q.get("price", 0) for q in data if "symbol" in q}
+            if not fresh and missing:
+                log.warning(f"FMP /quote devolvio lista vacia para {symbols} (intento {attempt}/{retries})")
+                if attempt < retries:
+                    _time.sleep(1)
+                    continue
+            # Store in cache and merge with cached results
+            _set_cached_prices(fresh)
+            return {**cached, **fresh}
+        except Exception as e:
+            log.warning(f"Error obteniendo precios de FMP (intento {attempt}/{retries}): {e}")
+            if attempt < retries:
+                _time.sleep(1)
+
+    log.error(f"No se pudieron obtener precios de FMP tras {retries} intentos para: {symbols}")
+    # Return whatever we had cached (partial data is better than nothing)
+    return cached if cached else {}
 
 
 def _post_process_allocation(
@@ -859,6 +963,7 @@ async def optimizar_markowitz_endpoint(
     # ── 4. Post-procesamiento: calculo de acciones ────────────
     comision_broker = req.comision_broker if req.comision_broker is not None else 0.0025
     asignacion_real_data = None
+    precios_no_disponibles = False
     if req.presupuesto:
         asignacion_raw = await asyncio.to_thread(
             _post_process_allocation,
@@ -870,6 +975,8 @@ async def optimizar_markowitz_endpoint(
         )
         if asignacion_raw:
             asignacion_real_data = AsignacionReal(**asignacion_raw)
+        else:
+            precios_no_disponibles = True
 
     # ── 5. Validacion contra perfil del inversor ────────────
     advertencias, compatible = await _validar_perfil_usuario(
@@ -877,6 +984,13 @@ async def optimizar_markowitz_endpoint(
         portafolio_optimo["volatility"],
         portafolio_optimo["expected_return"],
     )
+
+    if precios_no_disponibles:
+        advertencias.append(
+            "No se pudieron obtener precios actuales para calcular la asignacion "
+            "de acciones. Los pesos del portafolio son correctos; intenta de nuevo "
+            "en unos minutos para ver el desglose por acciones."
+        )
 
     return MarkowitzOutput(
         portafolio_optimo=PortafolioOptimo(**portafolio_optimo),
@@ -1001,6 +1115,7 @@ async def optimizar_hrp_endpoint(
     # ── 4. Post-procesamiento: calculo de acciones ────────────
     comision_broker = req.comision_broker if req.comision_broker is not None else 0.0025
     asignacion_real_data = None
+    precios_no_disponibles = False
     if req.presupuesto:
         asignacion_raw = await asyncio.to_thread(
             _post_process_allocation,
@@ -1012,6 +1127,8 @@ async def optimizar_hrp_endpoint(
         )
         if asignacion_raw:
             asignacion_real_data = AsignacionReal(**asignacion_raw)
+        else:
+            precios_no_disponibles = True
 
     # ── 5. Validacion contra perfil del inversor ────────────
     advertencias, compatible = await _validar_perfil_usuario(
@@ -1019,6 +1136,13 @@ async def optimizar_hrp_endpoint(
         portafolio_optimo["volatility"],
         portafolio_optimo["expected_return"],
     )
+
+    if precios_no_disponibles:
+        advertencias.append(
+            "No se pudieron obtener precios actuales para calcular la asignacion "
+            "de acciones. Los pesos del portafolio son correctos; intenta de nuevo "
+            "en unos minutos para ver el desglose por acciones."
+        )
 
     return HRPOutput(
         portafolio_optimo=PortafolioOptimo(**portafolio_optimo),
@@ -1155,6 +1279,7 @@ async def optimizar_montecarlo_endpoint(
     # ── 4. Post-procesamiento: calculo de acciones ────────────
     comision_broker = req.comision_broker if req.comision_broker is not None else 0.0025
     asignacion_real_data = None
+    precios_no_disponibles = False
     if req.presupuesto:
         asignacion_raw = await asyncio.to_thread(
             _post_process_allocation,
@@ -1166,6 +1291,8 @@ async def optimizar_montecarlo_endpoint(
         )
         if asignacion_raw:
             asignacion_real_data = AsignacionReal(**asignacion_raw)
+        else:
+            precios_no_disponibles = True
 
     # ── 5. Validacion contra perfil del inversor ────────────
     advertencias, compatible = await _validar_perfil_usuario(
@@ -1173,6 +1300,13 @@ async def optimizar_montecarlo_endpoint(
         result["portafolio_optimo"]["volatility"],
         result["portafolio_optimo"]["expected_return"],
     )
+
+    if precios_no_disponibles:
+        advertencias.append(
+            "No se pudieron obtener precios actuales para calcular la asignacion "
+            "de acciones. Los pesos del portafolio son correctos; intenta de nuevo "
+            "en unos minutos para ver el desglose por acciones."
+        )
 
     return MonteCarloOutput(
         portafolio_optimo=PortafolioOptimo(**result["portafolio_optimo"]),

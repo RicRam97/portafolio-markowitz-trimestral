@@ -10,9 +10,7 @@ import {
     TrendingUp,
     Crosshair,
     UserCircle,
-    CreditCard,
     Settings,
-    FileText,
     LogOut,
     ArrowRight
 } from 'lucide-react';
@@ -23,9 +21,7 @@ const navItems = [
     { icon: Crosshair, label: 'Optimizar', href: '/dashboard/optimizar' },
     { icon: TrendingUp, label: 'Estrategias', href: '/dashboard/estrategias' },
     { icon: UserCircle, label: 'Mi Perfil', href: '/dashboard/perfil' },
-    { icon: CreditCard, label: 'Mi Cuenta', href: '/dashboard/cuenta' },
     { icon: Settings, label: 'Configuracion', href: '/dashboard/config' },
-    { icon: FileText, label: 'Tests', href: '/dashboard/tests' },
 ];
 
 interface Props {
@@ -132,7 +128,7 @@ export default function DashboardUI({ nombre, email, testCompletado, children }:
                 {!testCompletado && (
                     <div className="bg-[var(--accent-primary)] text-white px-4 py-3 flex items-center justify-between shrink-0">
                         <span className="text-sm font-medium">Completa tu perfil de inversionista para empezar</span>
-                        <Link href="/dashboard/tests" className="flex items-center gap-1 text-sm font-semibold hover:opacity-80 transition-opacity">
+                        <Link href="/dashboard/perfil" className="flex items-center gap-1 text-sm font-semibold hover:opacity-80 transition-opacity">
                             Ir ahora <ArrowRight className="w-4 h-4" />
                         </Link>
                     </div>

@@ -28,6 +28,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${inter.variable} ${outfit.variable} font-sans antialiased`}
       >
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>

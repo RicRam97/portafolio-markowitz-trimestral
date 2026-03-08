@@ -96,11 +96,15 @@ def _upsert_cache_supabase(ticker: str, df: pd.DataFrame) -> None:
 # ── FMP API helpers ─────────────────────────────────────────────
 
 
-def _fetch_fmp_historical(ticker: str, fecha_inicio: date, fecha_fin: date) -> pd.DataFrame:
+def _fetch_fmp_historical(
+    ticker: str, fecha_inicio: date, fecha_fin: date, retries: int = 2
+) -> pd.DataFrame:
     """Descarga precios historicos desde Financial Modeling Prep (stable API).
     Retorna DataFrame con index=date, columna 'close'.
-    Lanza DataFetchError si el ticker no existe o FMP falla.
+    Lanza DataFetchError si el ticker no existe o FMP falla tras reintentos.
     """
+    import time
+
     if not FMP_API_KEY:
         raise DataFetchError("FMP_API_KEY no esta configurada. Agrega FMP_API_KEY al .env")
 
@@ -112,37 +116,57 @@ def _fetch_fmp_historical(ticker: str, fecha_inicio: date, fecha_fin: date) -> p
         "apikey": FMP_API_KEY,
     }
 
-    with httpx.Client(timeout=30.0) as client:
-        resp = client.get(url, params=params)
+    last_error: Exception | None = None
 
-    if resp.status_code == 404:
-        raise DataFetchError(
-            f"Ticker '{ticker}' no encontrado en FMP (HTTP 404).",
-            failed_tickers=[ticker],
-        )
+    for attempt in range(1, retries + 1):
+        try:
+            with httpx.Client(timeout=30.0) as client:
+                resp = client.get(url, params=params)
 
-    if resp.status_code != 200:
-        raise DataFetchError(
-            f"Error de FMP para '{ticker}': HTTP {resp.status_code}",
-            failed_tickers=[ticker],
-        )
+            if resp.status_code == 404:
+                raise DataFetchError(
+                    f"Ticker '{ticker}' no encontrado en FMP (HTTP 404).",
+                    failed_tickers=[ticker],
+                )
 
-    data = resp.json()
+            if resp.status_code != 200:
+                msg = f"Error de FMP para '{ticker}': HTTP {resp.status_code}"
+                if attempt < retries:
+                    logger.warning(f"{msg} (intento {attempt}/{retries}, reintentando...)")
+                    time.sleep(1.5)
+                    continue
+                raise DataFetchError(msg, failed_tickers=[ticker])
 
-    # Stable API returns a flat array of records
-    if not data:
-        raise DataFetchError(
-            f"FMP retorno un array vacio para '{ticker}'. Verifica que el simbolo sea valido.",
-            failed_tickers=[ticker],
-        )
+            data = resp.json()
 
-    df = pd.DataFrame(data)
-    df["date"] = pd.to_datetime(df["date"])
-    df.set_index("date", inplace=True)
-    df.sort_index(inplace=True)
-    df = df[["close"]].copy()
-    df["close"] = df["close"].astype(float)
-    return df
+            if not data:
+                raise DataFetchError(
+                    f"FMP retorno un array vacio para '{ticker}'. Verifica que el simbolo sea valido.",
+                    failed_tickers=[ticker],
+                )
+
+            df = pd.DataFrame(data)
+            df["date"] = pd.to_datetime(df["date"])
+            df.set_index("date", inplace=True)
+            df.sort_index(inplace=True)
+            df = df[["close"]].copy()
+            df["close"] = df["close"].astype(float)
+            return df
+
+        except DataFetchError:
+            raise
+        except Exception as e:
+            last_error = e
+            if attempt < retries:
+                logger.warning(f"Error de red FMP para '{ticker}' (intento {attempt}/{retries}): {e}")
+                time.sleep(1.5)
+            else:
+                logger.error(f"FMP fallo tras {retries} intentos para '{ticker}': {e}")
+
+    raise DataFetchError(
+        f"No se pudieron obtener datos historicos de '{ticker}' tras {retries} intentos: {last_error}",
+        failed_tickers=[ticker],
+    )
 
 
 # ── Public API ──────────────────────────────────────────────────

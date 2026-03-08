@@ -1,13 +1,16 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon } from 'lucide-react';
 
+const subscribe = () => () => {};
+const useMounted = () => useSyncExternalStore(subscribe, () => true, () => false);
+
 export default function ThemeToggle() {
     const { resolvedTheme, setTheme } = useTheme();
-    const [mounted] = useState(() => typeof window !== 'undefined');
+    const mounted = useMounted();
 
     if (!mounted) {
         return (
